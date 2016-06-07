@@ -1,3 +1,5 @@
+# ********** Copyright Viacom, Inc. Apache 2.0 **********
+
 module RokuBuilder
 
   # Commands that the controller uses to interface with the rest of the gem.

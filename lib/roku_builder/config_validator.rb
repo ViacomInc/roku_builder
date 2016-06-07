@@ -1,3 +1,5 @@
+# ********** Copyright Viacom, Inc. Apache 2.0 **********
+
 module RokuBuilder
 
   MISSING_DEVICES           = 1

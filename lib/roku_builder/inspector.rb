@@ -1,3 +1,5 @@
+# ********** Copyright Viacom, Inc. Apache 2.0 **********
+
 module RokuBuilder
 
   # Collects information on a package for submission

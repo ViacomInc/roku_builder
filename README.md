@@ -201,7 +201,7 @@ navigation on the roku console. The command is used as follows:
 
 The possible commands are as follows:
 
-https://github.com/ViacomInc/roku_builde * up
+ * up
  * down
  * right
  * left

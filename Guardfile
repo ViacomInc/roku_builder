@@ -1,3 +1,5 @@
+# ********** Copyright 2016 Viacom, Inc. Apache 2.0 **********
+
 # A sample Guardfile
 # More info at https://github.com/guard/guard#readme
 

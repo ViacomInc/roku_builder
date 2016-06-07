@@ -1,3 +1,5 @@
+# ********** Copyright 2016 Viacom, Inc. Apache 2.0 **********
+
 require "logger"
 require "faraday"
 require "faraday/digestauth"

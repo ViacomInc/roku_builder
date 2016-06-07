@@ -1,3 +1,5 @@
+# ********** Copyright Viacom, Inc. Apache 2.0 **********
+
 require_relative "test_helper.rb"
 
 class ControllerTest < Minitest::Test

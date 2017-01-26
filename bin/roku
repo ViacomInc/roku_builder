@@ -88,7 +88,7 @@ parser = OptionParser.new do |opts|
     options[:profile] = c
   end
 
-  opts.on("--do-stage", "Command: Run the stager. Used for scripting. Always run --do-unscript after") do
+  opts.on("--do-stage", "Command: Run the stager. Used for scripting. Always run --do-unstage after") do
     options[:dostage] = true
   end
 

@@ -145,7 +145,7 @@ parser = OptionParser.new do |opts|
     options[:edit_params] = p
   end
 
-  opts.on("--config CONFIG", "Set a custom config file. Default: '~/.roku_config.rb'") do |c|
+  opts.on("--config CONFIG", "Set a custom config file. Default: '~/.roku_config.json'") do |c|
     options[:config] = c
   end
 

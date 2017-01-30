@@ -18,6 +18,44 @@ class ConfigManagerTest < Minitest::Test
     assert_equal :project1, config[:projects][:default], :project1
   end
 
+  def test_config_manager_read_config_parent
+    logger = Logger.new("/dev/null")
+    config_path = "config/file/path"
+    io = Minitest::Mock.new
+    parent_config = good_config
+    parent_config[:projects].delete(:project1)
+    parent_config[:projects].delete(:project2)
+    child_config = good_config
+    child_config.delete(:devices)
+    child_config.delete(:keys)
+    child_config.delete(:input_mapping)
+    child_config[:parent_config] = "config/file/path"
+    io.expect(:read, child_config.to_json)
+    io.expect(:read, parent_config.to_json)
+    config = nil
+    File.stub(:open, io) do
+      config = RokuBuilder::ConfigManager.get_config(config: config_path, logger: logger)
+    end
+    io.verify
+    assert_equal "user",  config[:devices][:roku][:user]
+    assert_equal "<app name>", config[:projects][:project1][:app_name]
+  end
+
+  def test_config_manager_read_config_parent_too_deep
+    logger = Logger.new("/dev/null")
+    config_path = "config/file/path"
+    io = Minitest::Mock.new
+    parent_config = good_config
+    parent_config[:parent_config] = "config/file/path"
+    10.times {|_i| io.expect(:read, parent_config.to_json)}
+    config = nil
+    File.stub(:open, io) do
+      config = RokuBuilder::ConfigManager.get_config(config: config_path, logger: logger)
+    end
+    io.verify
+    assert_nil config
+  end
+
   def test_config_manger_load_config
     logger = Logger.new("/dev/null")
     target_config = File.join(File.dirname(__FILE__), "test_files", "controller_test", "configure_test.json")

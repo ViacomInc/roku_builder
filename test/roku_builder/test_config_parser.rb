@@ -94,7 +94,7 @@ class ConfigParserTest < Minitest::Test
     assert_equal "/tmp/project1", configs[:project_config][:directory]
   end
 
-  def test_manifest_config_project_directory
+  def test_manifest_config_key_directory
     logger = Logger.new("/dev/null")
     options = {key: true, project: :project2}
     config = good_config

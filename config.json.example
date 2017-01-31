@@ -9,7 +9,7 @@
   },
   "projects": {
     "default": "<project id>",
-    "project_dir": <optional parent directory for all projects>
+    "project_dir": "<optional parent directory for all projects>",
     "<project id>": {
       "directory": "<path/to/repo>",
       "folders": ["resources","source"],
@@ -27,6 +27,7 @@
     }
   },
   "keys": {
+    "key_dir": "<optional parent directory for all keys>",
     "key1": {
       "keyed_pkg": "<path/to/signed/package>",
       "password": "<password>"

@@ -44,7 +44,7 @@ module RokuBuilder
       end
       if config[:projects]
         config[:projects].each {|project,project_config|
-          next if project == :default
+          next if project == :default or project == :project_dir
           validate_project(codes: codes, project: project_config)
           if project_config[:stages]
             project_config[:stages].each {|_stage, stage_config|
@@ -54,7 +54,10 @@ module RokuBuilder
         }
       end
       if config[:keys]
-        config[:keys].each {|_key,key_config| validate_key(codes: codes, key: key_config) }
+        config[:keys].each {|key,key_config|
+          next if key == :key_dir
+          validate_key(codes: codes, key: key_config)
+        }
       end
       if config[:input_mapping]
         config[:input_mapping].each_value {|info| validate_mapping(codes: codes, mapping: info) }

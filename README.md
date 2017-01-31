@@ -98,6 +98,7 @@ configuration options:
 
 ##### Key Configuration
 
+ * keys.key_dir: optional directory that all keys are relative to
  * keys.<key_id>.keyed_pkg: path to a pkg file that has been signed
  * keys.<key_id>.password: password for the signed pkg
 

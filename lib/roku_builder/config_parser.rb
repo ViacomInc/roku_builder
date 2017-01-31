@@ -191,6 +191,9 @@ module RokuBuilder
         configs[:key] = configs[:project_config][:stages][stage][:key]
         if configs[:key].class == String
           configs[:key] = config[:keys][configs[:key].to_sym]
+          if config[:keys][:key_dir]
+            configs[:key][:keyed_pkg] = File.join(config[:keys][:key_dir], configs[:key][:keyed_pkg])
+          end
         end
       end
       if options[:package]

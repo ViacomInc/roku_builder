@@ -76,6 +76,24 @@ class ConfigParserTest < Minitest::Test
     assert_equal "/dev/nuller", configs[:project_config][:directory]
   end
 
+  def test_manifest_config_project_directory
+    logger = Logger.new("/dev/null")
+    options = {}
+    config = good_config
+    config[:projects][:project_dir] = "/tmp"
+    config[:projects][:project1][:directory] = "project1"
+
+
+    code = nil
+    configs = nil
+
+    code, configs = RokuBuilder::ConfigParser.parse_config(options: options, config: config, logger: logger)
+
+    assert_equal RokuBuilder::SUCCESS, code
+    assert_equal Hash, config.class
+    assert_equal "/tmp/project1", configs[:project_config][:directory]
+  end
+
   def test_setup_sideload_config
     args = {
       configs: {project_config: {directory: "/tmp", folders: ["a", "b"], files: ["c", "d"], excludes: []}, init_params: {}},

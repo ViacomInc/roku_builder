@@ -107,6 +107,9 @@ module RokuBuilder
       else
         project_config = config[:projects][options[:project].to_sym]
         return UNKNOWN_PROJECT unless project_config
+        if config[:projects][:project_dir]
+          project_config[:directory] = File.join(config[:projects][:project_dir], project_config[:directory])
+        end
         project_config[:stage_method] = :working if options[:working]
       end
       project_config

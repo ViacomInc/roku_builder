@@ -9,6 +9,7 @@
   },
   "projects": {
     "default": "<project id>",
+    "project_dir": <optional parent directory for all projects>
     "<project id>": {
       "directory": "<path/to/repo>",
       "folders": ["resources","source"],

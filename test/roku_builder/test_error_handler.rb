@@ -63,9 +63,6 @@ class ErrorHandlerTest < Minitest::Test
       warn: {
         load_code: [
           RokuBuilder::DEPRICATED_CONFIG
-        ],
-        options_code: [
-          RokuBuilder::DEPRICATED
         ]
       },
       debug: {

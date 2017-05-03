@@ -5,20 +5,20 @@ require_relative "test_helper.rb"
 class ConfigTest < Minitest::Test
 
   def test_config_init
-    options = {config: File.join(test_files_path(ConfigTest), "config.json")}
+    options = RokuBuilder::Options.new(options: {config: File.join(test_files_path(ConfigTest), "config.json"), validate: true})
     config = RokuBuilder::Config.new(options: options)
     config.load
   end
 
   def test_config_expand_path
-    options = {config: File.join(test_files_path(ConfigTest), "config.json")}
+    options = RokuBuilder::Options.new(options: {config: File.join(test_files_path(ConfigTest), "config.json"), validate: true})
     options[:config].sub!(/#{File.expand_path("~")}/, "~")
     config = RokuBuilder::Config.new(options: options)
     config.load
   end
 
   def test_missing_config
-    options = {config: File.join(test_files_path(ConfigTest), "missing.json")}
+    options = RokuBuilder::Options.new(options: {config: File.join(test_files_path(ConfigTest), "missing.json"), validate: true})
     assert_raises ArgumentError do
       config = RokuBuilder::Config.new(options: options)
       config.load
@@ -26,7 +26,7 @@ class ConfigTest < Minitest::Test
   end
 
   def test_invalid_config
-    options = {config: File.join(test_files_path(ConfigTest), "bad.json")}
+    options = RokuBuilder::Options.new(options: {config: File.join(test_files_path(ConfigTest), "bad.json"), validate: true})
     assert_raises RokuBuilder::InvalidConfig do
       config = RokuBuilder::Config.new(options: options)
       config.load
@@ -35,7 +35,7 @@ class ConfigTest < Minitest::Test
   end
 
   def test_non_json_config
-    options = {config: File.join(test_files_path(ConfigTest), "non_json.json")}
+    options = RokuBuilder::Options.new(options: {config: File.join(test_files_path(ConfigTest), "non_json.json"), validate: true})
     assert_raises RokuBuilder::InvalidConfig do
       config = RokuBuilder::Config.new(options: options)
       config.load
@@ -43,7 +43,7 @@ class ConfigTest < Minitest::Test
   end
 
   def test_config_parse
-    options = {config: File.join(test_files_path(ConfigTest), "config.json")}
+    options = RokuBuilder::Options.new(options: {config: File.join(test_files_path(ConfigTest), "config.json"), validate: true})
     config = RokuBuilder::Config.new(options: options)
     config.load
     config.parse
@@ -51,7 +51,7 @@ class ConfigTest < Minitest::Test
   end
 
   def test_config_read
-    options = {config: File.join(test_files_path(ConfigTest), "config.json")}
+    options = RokuBuilder::Options.new(options: {config: File.join(test_files_path(ConfigTest), "config.json"), validate: true})
     config = RokuBuilder::Config.new(options: options)
     config.load
     assert_equal :roku, config.raw[:devices][:default]
@@ -59,7 +59,7 @@ class ConfigTest < Minitest::Test
   end
 
   def test_config_read_parent
-    options = {config: File.join(test_files_path(ConfigTest), "child.json")}
+    options = RokuBuilder::Options.new(options: {config: File.join(test_files_path(ConfigTest), "child.json"), validate: true})
     config = RokuBuilder::Config.new(options: options)
     config.load
     assert_equal :roku, config.raw[:devices][:default]
@@ -67,7 +67,7 @@ class ConfigTest < Minitest::Test
   end
 
   def test_config_read_parent
-    options = {config: File.join(test_files_path(ConfigTest), "parent_projects.json")}
+    options = RokuBuilder::Options.new(options: {config: File.join(test_files_path(ConfigTest), "parent_projects.json"), validate: true})
     config = RokuBuilder::Config.new(options: options)
     config.load
     assert_equal "app", config.raw[:projects][:p1][:app_name]
@@ -77,11 +77,11 @@ class ConfigTest < Minitest::Test
     orginal = File.join(test_files_path(ConfigTest), "config.json")
     tmp = File.join(test_files_path(ConfigTest), "tmpconfig.json")
     FileUtils.cp(orginal, tmp)
-    options = {config: tmp, edit_params: "ip:123.456.789"}
+    options = RokuBuilder::Options.new(options: {config: tmp, edit_params: "ip:123.456.789", validate: true})
     config = RokuBuilder::Config.new(options: options)
     config.load
     config.edit
-    options = {config: tmp}
+    options = RokuBuilder::Options.new(options: {config: tmp, validate: true})
     config = RokuBuilder::Config.new(options: options)
     config.load
     assert_equal "123.456.789", config.raw[:devices][:roku][:ip]
@@ -89,7 +89,7 @@ class ConfigTest < Minitest::Test
   end
 
   def test_config_update_package
-    options = {config: File.join(test_files_path(ConfigTest), "config.json"), package: true, stage: :production}
+    options = RokuBuilder::Options.new(options: {config: File.join(test_files_path(ConfigTest), "config.json"), package: true, stage: :production, set_stage: true})
     config = RokuBuilder::Config.new(options: options)
     config.load
     config.parse
@@ -101,7 +101,7 @@ class ConfigTest < Minitest::Test
   end
 
   def test_config_update_build
-    options = {config: File.join(test_files_path(ConfigTest), "config.json"), build: true, stage: :production}
+    options = RokuBuilder::Options.new(options: {config: File.join(test_files_path(ConfigTest), "config.json"), build: true, stage: :production, set_stage: true})
     config = RokuBuilder::Config.new(options: options)
     config.load
     config.parse
@@ -111,7 +111,7 @@ class ConfigTest < Minitest::Test
   end
 
   def test_config_update_sideload
-    options = {config: File.join(test_files_path(ConfigTest), "config.json"), sideload: true, stage: :production, out: "/tmp2"}
+    options = RokuBuilder::Options.new(options: {config: File.join(test_files_path(ConfigTest), "config.json"), sideload: true, stage: :production, set_stage: true, out: "/tmp2"})
     config = RokuBuilder::Config.new(options: options)
     config.load
     config.parse

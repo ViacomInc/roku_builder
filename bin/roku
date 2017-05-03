@@ -3,7 +3,7 @@
 
 $:.unshift File.join(File.dirname(__FILE__), "..", "lib")
 
-require "byebug"
+#require "byebug"
 require "roku_builder"
 require "optparse"
 require "pathname"
@@ -196,7 +196,7 @@ end
 begin
   parser.parse!
   RokuBuilder::Controller.run(options: options)
-rescue OptionParser::ParseError => e
-  logger.fatal e.message
+rescue Exception => e
+  RokuBuilder::Logger.instance.fatal e.message
 end
 

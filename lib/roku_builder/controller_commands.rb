@@ -168,8 +168,7 @@ module RokuBuilder
     # @param config [Config] config object
     # @param logger [Logger] system logger
     def self.deeplink(options:, config:, logger:)
-      sources = options.keys & Controller.sources
-      if sources.count > 0
+      if options.has_source?
         sideload(options: options, config: config, logger:logger)
       end
 

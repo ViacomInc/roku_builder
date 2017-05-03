@@ -8,11 +8,9 @@ module RokuBuilder
     # Run the builder
     # @param options [Hash] The options hash
     def self.run(options:)
-      initialize_logger(options: options)
+      options = Options.new(options: options)
 
-      # Validate Options
-      options_code = validate_options(options: options)
-      ErrorHandler.handle_options_codes(options_code: options_code, options: options, logger: Logger.instance)
+      initialize_logger(options: options)
 
       # Configure Gem
       configure_code = configure(options: options, logger: Logger.instance)
@@ -41,81 +39,14 @@ module RokuBuilder
       else
         Logger.set_warn
       end
-
-      logger = Logger.instance
     end
-
-    # Validates the user options
-    # @param options [Hash] The options hash
-    # @return [Integer] Status code for command validation
-    def self.validate_options(options:)
-      command_result = validate_command_options(options: options)
-      return command_result unless command_result == VALID
-      source_result = validate_source_options(options: options)
-      return source_result unless source_result == VALID
-      combination_result = validate_option_combinations(options: options)
-      return combination_result unless combination_result == VALID
-      return validate_depricated_commands(options: options)
-    end
-    private_class_method :validate_options
-
-    # Validates use of command options
-    # @param options [Hash] The options hash
-    # @return [Integer] Status code for command validation
-    def self.validate_command_options(options:)
-      all_commands = options.keys & commands
-      return EXTRA_COMMANDS if all_commands.count > 1
-      return NO_COMMANDS if all_commands.count < 1
-      VALID
-    end
-    private_class_method :validate_command_options
-
-    # Validates use of source options
-    # @param options [Hash] The options hash
-    # @return [Integer] Status code for command validation
-    def self.validate_source_options(options:)
-      all_sources = options.keys & sources
-      return EXTRA_SOURCES if all_sources.count > 1
-      if (options.keys & source_commands).count == 1
-        return NO_SOURCE unless all_sources.count == 1
-      end
-      VALID
-    end
-    private_class_method :validate_source_options
-
-    # Validates proper option combinations
-    # @param options [Hash] The options hash
-    # @return [Integer] Status code for command validation
-    def self.validate_option_combinations(options:)
-      all_sources = options.keys & sources
-      if all_sources.include?(:current)
-        return BAD_CURRENT unless options[:build] or options[:sideload]
-      end
-      if options[:in]
-        return BAD_IN_FILE unless options[:sideload]
-      end
-      VALID
-    end
-    private_class_method :validate_option_combinations
-
-    # Validate depricated options adn commands
-    # @param options [Hash] The Options hash
-    # @return [Integer] Status code for command validation
-    def self.validate_depricated_commands(options:)
-      depricated = options.keys & depricated_options.keys
-      if depricated.count > 0
-        return DEPRICATED
-      end
-      VALID
-    end
-    private_class_method :validate_depricated_commands
 
     # Run commands
     # @param options [Hash] The options hash
     # @return [Integer] Return code for options handeling
     # @param logger [Logger] system logger
     def self.execute_commands(options:, config:, logger:)
-      command = (commands & options.keys).first
+      command = options.command
       if ControllerCommands.simple_commands.keys.include?(command)
         params = ControllerCommands.simple_commands[command]
         params[:config] = config
@@ -143,8 +74,7 @@ module RokuBuilder
     # @param options [Hash] The options hash
     # @param logger [Logger] system logger
     def self.check_devices(options:, config:, logger:)
-      command = (options.keys & commands).first
-      if device_commands.include?(command)
+      if options.device_command?
         ping = Net::Ping::External.new
         host = config.parsed[:device_config][:ip]
         return GOOD_DEVICE if ping.ping? host, 1, 0.2, 1
@@ -163,51 +93,6 @@ module RokuBuilder
       return GOOD_DEVICE
     end
     private_class_method :check_devices
-
-    # List of command options
-    # @return [Array<Symbol>] List of command symbols that can be used in the options hash
-    def self.commands
-      [:sideload, :package, :test, :deeplink,:configure, :validate, :delete,
-        :navigate, :navigator, :text, :build, :monitor, :update, :screencapture,
-        :key, :genkey, :screen, :screens, :applist, :print, :profile, :dostage,
-        :dounstage]
-    end
-
-    # List of depricated options
-    # @return [Hash] Hash of depricated options and the warning message for each
-    def self.depricated_options
-      {deeplink_depricated: "-L and --deeplink are depricated. Use -o or --deeplink-options." }
-    end
-
-    # List of source options
-    # @return [Array<Symbol>] List of source symbols that can be used in the options hash
-    def self.sources
-      [:ref, :set_stage, :working, :current, :in]
-    end
-
-    # List of commands requiring a source option
-    # @return [Array<Symbol>] List of command symbols that require a source in the options hash
-    def self.source_commands
-      [:sideload, :package, :test, :build, :key, :update, :print]
-    end
-
-    # List of commands the activate the exclude files
-    # @return [Array<Symbol] List of commands the will activate the exclude files lists
-    def self.exclude_commands
-      [:build, :package]
-    end
-
-    # List of commands that require a device
-    # @return [Array<Symbol>] List of commands that require a device
-    def self.device_commands
-      [:sideload, :package, :test, :deeplink, :delete, :navigate, :navigator,
-        :text, :monitor, :screencapture, :applist, :profile, :key, :genkey ]
-    end
-
-    def self.exclude_command?(options:)
-      all_commands = options.keys & commands
-      (all_commands & exclude_commands).count > 0
-    end
 
     # Configure the gem
     # @param options [Hash] The options hash

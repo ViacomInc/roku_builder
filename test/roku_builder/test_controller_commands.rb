@@ -16,7 +16,7 @@ class ControllerCommandsTest < Minitest::Test
     loader = Minitest::Mock.new
     stager = Minitest::Mock.new
 
-    options = {sideload: true, config: "~/.roku_config.rb"}
+    options = RokuBuilder::Options.new(options: {sideload: true, config: "~/.roku_config.rb", working: true})
     config = RokuBuilder::Config.new(options: options)
     config.instance_variable_set(:@config, good_config)
     config.parse
@@ -58,7 +58,7 @@ class ControllerCommandsTest < Minitest::Test
     packager = Minitest::Mock.new
     inspector = Minitest::Mock.new
 
-    options = {package: true, inspect: true, out_folder: "/tmp", config: "~/.roku_config.json"}
+    options = RokuBuilder::Options.new(options: {package: true, inspect: true, out_folder: "/tmp", config: "~/.roku_config.json", set_stage: true})
     config = RokuBuilder::Config.new(options: options)
     config.instance_variable_set(:@config, good_config)
     config.parse
@@ -103,7 +103,7 @@ class ControllerCommandsTest < Minitest::Test
     packager = Minitest::Mock.new
     inspector = Minitest::Mock.new
 
-    options = {package: true, inspect: true, out: "/tmp/out.pkg", config: "~/.roku_config.json"}
+    options = RokuBuilder::Options.new(options: {package: true, inspect: true, out: "/tmp/out.pkg", config: "~/.roku_config.json", set_stage: true})
     config = RokuBuilder::Config.new(options: options)
     config.instance_variable_set(:@config, good_config)
     config.parse
@@ -146,7 +146,7 @@ class ControllerCommandsTest < Minitest::Test
     stager = Minitest::Mock.new
 
     code = nil
-    options = {build: true, out_folder: "/tmp", config: "~/.roku_config.json"}
+    options = RokuBuilder::Options.new(options: {build: true, out_folder: "/tmp", config: "~/.roku_config.json", working: true})
     config = RokuBuilder::Config.new(options: options)
     config.instance_variable_set(:@config, good_config)
     config.parse
@@ -172,7 +172,7 @@ class ControllerCommandsTest < Minitest::Test
     stager = Minitest::Mock.new
 
     code = nil
-    options = {update: true, out_folder: "/tmp", config: "~/.roku_config.json"}
+    options = RokuBuilder::Options.new(options: {update: true, out_folder: "/tmp", config: "~/.roku_config.json", working: true})
     config = RokuBuilder::Config.new(options: options)
     config.instance_variable_set(:@config, good_config)
     config.parse
@@ -198,7 +198,7 @@ class ControllerCommandsTest < Minitest::Test
     mock = Minitest::Mock.new
 
     code = nil
-    options = {deeplink: true, deeplink_options: "a:b", config: "~/.roku_config.json"}
+    options = RokuBuilder::Options.new(options: {deeplink: true, deeplink_options: "a:b", config: "~/.roku_config.json"})
     config = RokuBuilder::Config.new(options: options)
     config.instance_variable_set(:@config, good_config)
     config.parse
@@ -218,7 +218,7 @@ class ControllerCommandsTest < Minitest::Test
     sideload =  Proc.new {|a, b, c| ran_sideload = true}
 
     code = nil
-    options = {deeplink: true, set_stage: true, deeplink_options: "a:b", config: "~/.roku_config.json"}
+    options = RokuBuilder::Options.new(options: {deeplink: true, set_stage: true, deeplink_options: "a:b", config: "~/.roku_config.json"})
     config = RokuBuilder::Config.new(options: options)
     config.instance_variable_set(:@config, good_config)
     config.parse
@@ -238,7 +238,7 @@ class ControllerCommandsTest < Minitest::Test
     stager = Minitest::Mock.new
 
     code = nil
-    options = {deeplink: true, deeplink_options: "a:b", config: "~/.roku_config.json"}
+    options = RokuBuilder::Options.new(options: {deeplink: true, deeplink_options: "a:b", config: "~/.roku_config.json"})
     config = RokuBuilder::Config.new(options: options)
     config.instance_variable_set(:@config, good_config)
     config.parse
@@ -257,7 +257,7 @@ class ControllerCommandsTest < Minitest::Test
     logger = Logger.new("/dev/null")
     loader = Minitest::Mock.new
 
-    options = {delete: true, config: "~/.roku_config.json"}
+    options = RokuBuilder::Options.new(options: {delete: true, config: "~/.roku_config.json"})
     config = RokuBuilder::Config.new(options: options)
     config.instance_variable_set(:@config, good_config)
     config.parse
@@ -275,7 +275,7 @@ class ControllerCommandsTest < Minitest::Test
     logger = Logger.new("/dev/null")
     monitor = Minitest::Mock.new
 
-    options = {monitor: "main", config: "~/.roku_config.json"}
+    options = RokuBuilder::Options.new(options: {monitor: "main", config: "~/.roku_config.json"})
     config = RokuBuilder::Config.new(options: options)
     config.instance_variable_set(:@config, good_config)
     config.parse
@@ -293,7 +293,7 @@ class ControllerCommandsTest < Minitest::Test
     logger = Logger.new("/dev/null")
     navigator = Minitest::Mock.new
 
-    options = {navigate: "up", config: "~/.roku_config.json"}
+    options = RokuBuilder::Options.new(options: {navigate: "up", config: "~/.roku_config.json"})
     config = RokuBuilder::Config.new(options: options)
     config.instance_variable_set(:@config, good_config)
     config.parse
@@ -309,7 +309,7 @@ class ControllerCommandsTest < Minitest::Test
     logger = Logger.new("/dev/null")
     navigator = Minitest::Mock.new
 
-    options = {navigate: "up", config: ":execute_commands,/.roku_config.json"}
+    options = RokuBuilder::Options.new(options: {navigate: "up", config: ":execute_commands,/.roku_config.json"})
     config = RokuBuilder::Config.new(options: options)
     config.instance_variable_set(:@config, good_config)
     config.parse
@@ -325,7 +325,7 @@ class ControllerCommandsTest < Minitest::Test
     logger = Logger.new("/dev/null")
     navigator = Minitest::Mock.new
 
-    options = {screen: "secret", config: "~/.roku_config.json"}
+    options = RokuBuilder::Options.new(options: {screen: "secret", config: "~/.roku_config.json"})
     config = RokuBuilder::Config.new(options: options)
     config.instance_variable_set(:@config, good_config)
     config.parse
@@ -341,7 +341,7 @@ class ControllerCommandsTest < Minitest::Test
     logger = Logger.new("/dev/null")
     navigator = Minitest::Mock.new
 
-    options = {screens: true, config: "~/.roku_config.json"}
+    options = RokuBuilder::Options.new(options: {screens: true, config: "~/.roku_config.json"})
     config = RokuBuilder::Config.new(options: options)
     config.instance_variable_set(:@config, good_config)
     config.parse
@@ -357,7 +357,7 @@ class ControllerCommandsTest < Minitest::Test
     logger = Logger.new("/dev/null")
     navigator = Minitest::Mock.new
 
-    options = {text: "text string", config: "~/.roku_config.json"}
+    options = RokuBuilder::Options.new(options: {text: "text string", config: "~/.roku_config.json"})
     config = RokuBuilder::Config.new(options: options)
     config.instance_variable_set(:@config, good_config)
     config.parse
@@ -374,7 +374,7 @@ class ControllerCommandsTest < Minitest::Test
     tester = Minitest::Mock.new
     stager = Minitest::Mock.new
 
-    options = {test: true, config: "~/.roku_config.json"}
+    options = RokuBuilder::Options.new(options: {test: true, config: "~/.roku_config.json", working: true})
     config = RokuBuilder::Config.new(options: options)
     config.instance_variable_set(:@config, good_config)
     config.parse
@@ -396,7 +396,7 @@ class ControllerCommandsTest < Minitest::Test
     logger = Logger.new("/dev/null")
     inspector = Minitest::Mock.new
 
-    options = {screencapture: true, out: "/tmp/capture.jpg", config: "~/.roku_config.json"}
+    options = RokuBuilder::Options.new(options: {screencapture: true, out: "/tmp/capture.jpg", config: "~/.roku_config.json"})
     config = RokuBuilder::Config.new(options: options)
     config.instance_variable_set(:@config, good_config)
     config.parse
@@ -412,7 +412,7 @@ class ControllerCommandsTest < Minitest::Test
     logger = Logger.new("/dev/null")
     inspector = Minitest::Mock.new
 
-    options = {screencapture: true, out: "/tmp", config: "~/.roku_config.json"}
+    options = RokuBuilder::Options.new(options: {screencapture: true, out: "/tmp", config: "~/.roku_config.json"})
     config = RokuBuilder::Config.new(options: options)
     config.instance_variable_set(:@config, good_config)
     config.parse
@@ -428,7 +428,7 @@ class ControllerCommandsTest < Minitest::Test
     logger = Logger.new("/dev/null")
     stager = Minitest::Mock.new
 
-    options = {print: 'title', config: "~/.roku_config.json"}
+    options = RokuBuilder::Options.new(options: {print: 'title', config: "~/.roku_config.json", working: true})
     configs = {stage_config: {}}
     config = RokuBuilder::Config.new(options: options)
     config.instance_variable_set(:@parsed, configs)
@@ -450,7 +450,7 @@ class ControllerCommandsTest < Minitest::Test
     logger = Logger.new("/dev/null")
     stager = Minitest::Mock.new
 
-    options = {dostage: true, config: "~/.roku_config.json"}
+    options = RokuBuilder::Options.new(options: {dostage: true, config: "~/.roku_config.json"})
     config = RokuBuilder::Config.new(options: options)
     config.instance_variable_set(:@parsed, {stage_config: {}})
     code = nil
@@ -467,7 +467,7 @@ class ControllerCommandsTest < Minitest::Test
     logger = Logger.new("/dev/null")
     stager = Minitest::Mock.new
 
-    options = {dounstage: true, config: "~/.roku_config.json"}
+    options = RokuBuilder::Options.new(options: {dounstage: true, config: "~/.roku_config.json"})
     configs = {stage_config: {}}
     config = RokuBuilder::Config.new(options: options)
     config.instance_variable_set(:@parsed, configs)

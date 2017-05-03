@@ -6,4 +6,7 @@ module RokuBuilder
 
   class ParseError < StandardError
   end
+
+  class InvalidOptions < StandardError
+  end
 end

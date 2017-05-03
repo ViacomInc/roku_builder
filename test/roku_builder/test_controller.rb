@@ -3,74 +3,6 @@
 require_relative "test_helper.rb"
 
 class ControllerTest < Minitest::Test
-  def test_controller_validate_options_extra_commands
-    options = {
-      sideload: true,
-      package: true
-    }
-    assert_equal RokuBuilder::EXTRA_COMMANDS, RokuBuilder::Controller.send(:validate_options, {options: options})
-  end
-  def test_controller_validate_options_no_commands
-    options = {}
-    assert_equal RokuBuilder::NO_COMMANDS,  RokuBuilder::Controller.send(:validate_options, {options: options})
-  end
-  def test_controller_validate_options_extra_sources_sideload
-    options = {
-      sideload: true,
-      working: true,
-      current: true
-    }
-    assert_equal RokuBuilder::EXTRA_SOURCES, RokuBuilder::Controller.send(:validate_options, {options: options})
-  end
-  def test_controller_validate_options_working
-    options = {
-      sideload: true,
-      working: true
-    }
-    assert_equal RokuBuilder::VALID, RokuBuilder::Controller.send(:validate_options, {options: options})
-  end
-  def test_controller_validate_options_no_source
-    options = {
-      package: true
-    }
-    assert_equal RokuBuilder::NO_SOURCE, RokuBuilder::Controller.send(:validate_options, {options: options})
-  end
-  def test_controller_validate_options_bad_current
-    options = {
-      package: true,
-      current: true
-    }
-    assert_equal RokuBuilder::BAD_CURRENT, RokuBuilder::Controller.send(:validate_options, {options: options})
-  end
-  def test_controller_validate_options_bad_in
-    options = {
-      package: true,
-      in: true
-    }
-    assert_equal RokuBuilder::BAD_IN_FILE, RokuBuilder::Controller.send(:validate_options, {options: options})
-  end
-  def test_controller_validate_options_depricated
-    options = {
-      deeplink: "a:b c:d",
-      deeplink_depricated: true
-    }
-    assert_equal RokuBuilder::DEPRICATED, RokuBuilder::Controller.send(:validate_options, {options: options})
-  end
-  def test_controller_validate_options_current
-    options = {
-      sideload: true,
-      current: true
-    }
-    assert_equal RokuBuilder::VALID, RokuBuilder::Controller.send(:validate_options, {options: options})
-  end
-  def test_controller_validate_options_extra_sources_package
-    options = {
-      package: true,
-      in: "",
-      set_stage: true
-    }
-    assert_equal RokuBuilder::EXTRA_SOURCES, RokuBuilder::Controller.send(:validate_options, {options: options})
-  end
   def test_controller_configure
     logger = Logger.new("/dev/null")
     target_config = File.join(File.dirname(__FILE__), "test_files", "controller_test", "configure_test.json")
@@ -114,7 +46,7 @@ class ControllerTest < Minitest::Test
   def test_controller_check_devices
     logger = Logger.new("/dev/null")
     ping = Minitest::Mock.new
-    options = {sideload: true, device_given: false}
+    options = RokuBuilder::Options.new(options: {sideload: true, device_given: false, working: true})
     raw = {
       devices: {
         a: {ip: "2.2.2.2"},
@@ -151,7 +83,7 @@ class ControllerTest < Minitest::Test
       code = RokuBuilder::Controller.send(:check_devices, {options: options, config: config, logger: logger})
       assert_equal RokuBuilder::BAD_DEVICE, code
 
-      options = {build: true, device_given: false}
+      options = RokuBuilder::Options.new(options: {build: true, device_given: false, working: true})
       code = RokuBuilder::Controller.send(:check_devices, {options: options, config: config, logger: logger})
       assert_equal RokuBuilder::GOOD_DEVICE, code
     end

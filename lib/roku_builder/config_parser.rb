@@ -62,9 +62,8 @@ module RokuBuilder
     end
 
     def project_required
-      has_source_command = (Controller.source_commands & @options.keys).count > 0
       non_project_source = ([:current, :in] & @options.keys).count > 0
-      has_source_command and not non_project_source
+      @options.source_command? and not non_project_source
     end
 
     def current_project
@@ -224,7 +223,7 @@ module RokuBuilder
     end
 
     def add_excludes?
-      @options[:exclude] or Controller.exclude_command?(options: @options)
+      @options[:exclude] or @options.exclude_command?
     end
 
     def setup_package_config

@@ -138,16 +138,5 @@ module RokuBuilder
         abort
       end
     end
-
-    # Print Options Deprications
-    # @param options [Hash] The options hash.
-    # @param logger [Logger] system logger
-    def self.print_options_depricateions(options:, logger:)
-      depricated = Controller.depricated_options.keys & options.keys
-      depricated.each do |key|
-        logger.warn Controller.depricated_options[key]
-      end
-    end
-    private_class_method :print_options_depricateions
   end
 end

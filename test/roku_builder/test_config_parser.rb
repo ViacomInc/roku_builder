@@ -4,9 +4,10 @@ require_relative "test_helper.rb"
 
 class ConfigParserTest < Minitest::Test
   def test_manifest_config
-    options = {
-      sideload: true
-    }
+    options = RokuBuilder::Options.new(options: {
+      sideload: true,
+      working: true
+    })
     config = good_config
     configs = RokuBuilder::ConfigParser.parse(options: options, config: config)
 
@@ -15,10 +16,10 @@ class ConfigParserTest < Minitest::Test
   end
 
   def test_manifest_config_in
-    options = {
+    options = RokuBuilder::Options.new(options: {
       in: "/dev/null/infile",
       sideload: true
-    }
+    })
     config = good_config
     configs = RokuBuilder::ConfigParser.parse(options: options, config: config)
 
@@ -28,10 +29,10 @@ class ConfigParserTest < Minitest::Test
   end
 
   def test_manifest_config_in_expand
-    options = {
+    options = RokuBuilder::Options.new(options: {
       in: "./infile",
       sideload: true
-    }
+    })
     config = good_config
     configs = RokuBuilder::ConfigParser.parse(options: options, config: config)
 
@@ -41,10 +42,10 @@ class ConfigParserTest < Minitest::Test
   end
 
   def test_manifest_config_current
-    options = {
+    options = RokuBuilder::Options.new(options: {
       current: true,
       sideload: true
-    }
+    })
     configs = nil
     config = good_config
     Pathname.stub(:pwd, "/dev/null/infile") do
@@ -60,7 +61,7 @@ class ConfigParserTest < Minitest::Test
 
   def test_setup_project_config_bad_project
     config = good_config
-    options = {sideload: true, project: :project3}
+    options = RokuBuilder::Options.new(options: {sideload: true, project: :project3, set_stage: true})
     assert_raises RokuBuilder::ParseError do
       File.stub(:exist?, true) do
         RokuBuilder::ConfigParser.parse(options: options, config: config)
@@ -69,7 +70,7 @@ class ConfigParserTest < Minitest::Test
   end
 
   def test_setup_project_config_current
-    options =  { sideload: true, current: true }
+    options = RokuBuilder::Options.new(options: { sideload: true, current: true })
     config = good_config
     configs = nil
     File.stub(:exist?, true) do
@@ -84,7 +85,7 @@ class ConfigParserTest < Minitest::Test
 
   def test_setup_project_config_good_project_dir
     config = good_config
-    options =  {sideload: true, project: :project1}
+    options = RokuBuilder::Options.new(options: {sideload: true, project: :project1, set_stage: true})
     File.stub(:exist?, true) do
       RokuBuilder::ConfigParser.parse(options: options, config: config)
     end
@@ -93,7 +94,7 @@ class ConfigParserTest < Minitest::Test
   def test_setup_project_config_bad_project_dir
     config = good_config
     config[:projects][:project1][:directory] = "/dev/null"
-    options = {sideload: true, project: :project1}
+    options = RokuBuilder::Options.new(options: {sideload: true, project: :project1, working: true})
     assert_raises RokuBuilder::ParseError do
       File.stub(:exist?, true) do
         RokuBuilder::ConfigParser.parse(options: options, config: config)
@@ -105,7 +106,7 @@ class ConfigParserTest < Minitest::Test
     config = good_config
     config[:projects][:project_dir] = "/tmp"
     config[:projects][:project1][:directory] = "bad"
-    options = {sideload: true, project: :project1}
+    options = RokuBuilder::Options.new(options: {sideload: true, project: :project1, working: true})
     assert_raises RokuBuilder::ParseError do
       File.stub(:exist?, true) do
         RokuBuilder::ConfigParser.parse(options: options, config: config)
@@ -117,7 +118,7 @@ class ConfigParserTest < Minitest::Test
     config = good_config
     config[:projects][:project_dir] = "/bad"
     config[:projects][:project1][:directory] = "good"
-    options = {sideload: true, project: :project1}
+    options = RokuBuilder::Options.new(options: {sideload: true, project: :project1, set_stage: true})
     assert_raises RokuBuilder::ParseError do
       File.stub(:exist?, true) do
         RokuBuilder::ConfigParser.parse(options: options, config: config)
@@ -127,7 +128,7 @@ class ConfigParserTest < Minitest::Test
 
   def test_setup_stage_config_bad_stage
     config = good_config
-    options = {sideload: true, project: :project1, stage: :bad}
+    options = RokuBuilder::Options.new(options: {sideload: true, project: :project1, stage: :bad, set_stage: true})
     assert_raises RokuBuilder::ParseError do
       File.stub(:exist?, true) do
         RokuBuilder::ConfigParser.parse(options: options, config: config)
@@ -138,7 +139,7 @@ class ConfigParserTest < Minitest::Test
   def test_setup_stage_config_bad_method
     config = good_config
     config[:projects][:project1][:stage_method] = :bad
-    options = {sideload: true, project: :project1}
+    options = RokuBuilder::Options.new(options: {sideload: true, project: :project1, set_stage: true})
     assert_raises RokuBuilder::ParseError do
       File.stub(:exist?, true) do
         RokuBuilder::ConfigParser.parse(options: options, config: config)
@@ -149,7 +150,7 @@ class ConfigParserTest < Minitest::Test
   def test_setup_stage_config_missing_method
     config = good_config
     config[:projects][:project1][:stage_method] = nil
-    options = {sideload: true, project: :project1}
+    options = RokuBuilder::Options.new(options: {sideload: true, project: :project1, set_stage: true})
     assert_raises RokuBuilder::ParseError do
       File.stub(:exist?, true) do
         RokuBuilder::ConfigParser.parse(options: options, config: config)
@@ -161,20 +162,20 @@ class ConfigParserTest < Minitest::Test
     config = good_config
     config[:projects][:project1][:stage_method] = :script
     config[:projects][:project1][:stages][:production][:script] = {stage: "script", unstage: "script"}
-    options = {stage: "production", sideload: true}
+    options = RokuBuilder::Options.new(options: {stage: "production", sideload: true, set_stage: true})
     parsed = RokuBuilder::ConfigParser.parse(options: options, config: config)
     assert_equal parsed[:project_config][:stages][:production][:script], config[:projects][:project1][:stages][:production][:script]
   end
 
   def test_setup_stage_config_git_ref
     config = good_config
-    options = {stage: "production", ref: "git-ref", sideload: true}
+    options = RokuBuilder::Options.new(options: {stage: "production", ref: "git-ref", sideload: true})
     parsed = RokuBuilder::ConfigParser.parse(options: options, config: config)
     assert_equal options[:ref], parsed[:stage_config][:key]
   end
 
   def test_manifest_config_project_select
-    options = { sideload: true }
+    options = RokuBuilder::Options.new(options: { sideload: true, working: true })
     config = good_config
     configs = nil
     Pathname.stub(:pwd, Pathname.new("/dev/nuller")) do
@@ -185,9 +186,10 @@ class ConfigParserTest < Minitest::Test
   end
 
   def test_manifest_config_project_directory
-    options = {
-      sideload: true
-    }
+    options = RokuBuilder::Options.new(options: {
+      sideload: true,
+      working: true
+    })
     config = good_config
     config[:projects][:project_dir] = "/tmp"
     config[:projects][:project1][:directory] = "project1"
@@ -204,7 +206,7 @@ class ConfigParserTest < Minitest::Test
   end
 
   def test_manifest_config_project_directory_select
-    options = {sideload: true}
+    options = RokuBuilder::Options.new(options: {sideload: true, working: true})
     config = good_config
     config[:projects][:project_dir] = "/tmp"
     config[:projects][:project1][:directory] = "project1"
@@ -223,7 +225,7 @@ class ConfigParserTest < Minitest::Test
 
   def test_key_config_key_directory
     tmp_file = Tempfile.new("pkg")
-    options = {key: true, project: :project2}
+    options = RokuBuilder::Options.new(options: {key: true, project: :project2, set_stage: true})
     config = good_config
     config[:keys][:key_dir] = File.dirname(tmp_file.path)
     config[:keys][:a][:keyed_pkg] = File.basename(tmp_file.path)
@@ -237,7 +239,7 @@ class ConfigParserTest < Minitest::Test
 
   def test_key_config_key_directory_bad
     tmp_file = Tempfile.new("pkg")
-    options = {key: true, project: :project2}
+    options = RokuBuilder::Options.new(options: {key: true, project: :project2, set_stage: true})
     config = good_config
     config[:keys][:key_dir] = "/bad"
     config[:keys][:a][:keyed_pkg] = File.basename(tmp_file.path)
@@ -249,7 +251,7 @@ class ConfigParserTest < Minitest::Test
 
   def test_key_config_key_path_bad
     tmp_file = Tempfile.new("pkg")
-    options = {key: true, project: :project2}
+    options = RokuBuilder::Options.new(options: {key: true, project: :project2, set_stage: true})
     config = good_config
     config[:keys][:key_dir] = File.dirname(tmp_file.path)
     config[:keys][:a][:keyed_pkg] = File.basename(tmp_file.path)+".bad"
@@ -260,7 +262,7 @@ class ConfigParserTest < Minitest::Test
   end
 
   def test_key_config_bad_key
-    options = {key: true, project: :project1}
+    options = RokuBuilder::Options.new(options: {key: true, project: :project1, set_stage: true})
     config = good_config
     config[:projects][:project1][:stages][:production][:key] = "bad"
 
@@ -271,7 +273,7 @@ class ConfigParserTest < Minitest::Test
 
   def test_setup_sideload_config
     config = good_config
-    options = {sideload: true}
+    options = RokuBuilder::Options.new(options: {sideload: true, working: true})
     parsed = RokuBuilder::ConfigParser.parse(options: options, config: config)
 
     refute_nil parsed[:sideload_config]
@@ -288,26 +290,26 @@ class ConfigParserTest < Minitest::Test
   def test_setup_sideload_config_exclude
     config = good_config
     config[:projects][:project1][:excludes] = []
-    options = {sideload: true}
+    options = RokuBuilder::Options.new(options: {sideload: true, working: true})
     parsed = RokuBuilder::ConfigParser.parse(options: options, config: config)
     assert_nil parsed[:sideload_config][:content][:excludes]
 
-    options = {build: true}
+    options = RokuBuilder::Options.new(options: {build: true, working: true})
     parsed = RokuBuilder::ConfigParser.parse(options: options, config: config)
     refute_nil parsed[:sideload_config][:content][:excludes]
 
-    options = {package: true}
+    options = RokuBuilder::Options.new(options: {package: true, set_stage: true})
     parsed = RokuBuilder::ConfigParser.parse(options: options, config: config)
     refute_nil parsed[:sideload_config][:content][:excludes]
 
-    options = {sideload: true, exclude: true}
+    options = RokuBuilder::Options.new(options: {sideload: true, working: true, exclude: true})
     parsed = RokuBuilder::ConfigParser.parse(options: options, config: config)
     refute_nil parsed[:sideload_config][:content][:excludes]
   end
 
   def test_deeplink_app_config
     config = good_config
-    options = {deeplink: "a:b", app_id: "xxxxxx"}
+    options = RokuBuilder::Options.new(options: {deeplink: "a:b", app_id: "xxxxxx"})
     parsed = RokuBuilder::ConfigParser.parse(options: options, config: config)
 
     assert_equal parsed[:deeplink_config][:options], options[:deeplink]
@@ -316,54 +318,68 @@ class ConfigParserTest < Minitest::Test
 
   def test_monitor_config
     config = good_config
-    options = {monitor: "main", regexp: "^A$"}
+    options = RokuBuilder::Options.new(options: {monitor: "main", regexp: "^A$"})
     parsed = RokuBuilder::ConfigParser.parse(options: options, config: config)
     refute_nil parsed[:monitor_config][:regexp]
     assert parsed[:monitor_config][:regexp].match("A")
   end
-
-  def test_outfile_config
+  def test_outfile_config_default
     config = good_config
-    options =  {out: nil}
+    options = RokuBuilder::Options.new(options: {build: true, working: true, out: nil})
     parsed = RokuBuilder::ConfigParser.parse(options: options, config: config)
 
     refute_nil parsed[:out]
     refute_nil parsed[:out][:folder]
     assert_nil parsed[:out][:file]
     assert_equal "/tmp", parsed[:out][:folder]
+  end
+  def test_outfile_config_folder
+    config = good_config
 
-    options = {out: "/home/user"}
+    options = RokuBuilder::Options.new(options: {build: true, working: true, out: "/home/user"})
     parsed = RokuBuilder::ConfigParser.parse(options: options, config: config)
     refute_nil parsed[:out]
     refute_nil parsed[:out][:folder]
     assert_nil parsed[:out][:file]
     assert_equal "/home/user", parsed[:out][:folder]
+  end
+  def test_outfile_config_pkg
+    config = good_config
 
-    options = {out: "/home/user/file.pkg"}
+    options = RokuBuilder::Options.new(options: {build: true, working: true, out: "/home/user/file.pkg"})
     parsed = RokuBuilder::ConfigParser.parse(options: options, config: config)
     refute_nil parsed[:out]
     refute_nil parsed[:out][:folder]
     refute_nil parsed[:out][:file]
     assert_equal "/home/user", parsed[:out][:folder]
     assert_equal "file.pkg", parsed[:out][:file]
+  end
+  def test_outfile_config_zip
+    config = good_config
 
-    options = {out: "/home/user/file.zip"}
+    options = RokuBuilder::Options.new(options: {build: true, working: true, out: "/home/user/file.zip"})
     parsed = RokuBuilder::ConfigParser.parse(options: options, config: config)
     refute_nil parsed[:out]
     refute_nil parsed[:out][:folder]
     refute_nil parsed[:out][:file]
     assert_equal "/home/user", parsed[:out][:folder]
     assert_equal "file.zip", parsed[:out][:file]
+  end
+  def test_outfile_config_jpg
+    config = good_config
 
-    options = {out: "/home/user/file.jpg"}
+    options = RokuBuilder::Options.new(options: {build: true, working: true, out: "/home/user/file.jpg"})
     parsed = RokuBuilder::ConfigParser.parse(options: options, config: config)
     refute_nil parsed[:out]
     refute_nil parsed[:out][:folder]
     refute_nil parsed[:out][:file]
     assert_equal "/home/user", parsed[:out][:folder]
     assert_equal "file.jpg", parsed[:out][:file]
+  end
+  def test_outfile_config_default_jpg
+    config = good_config
 
-    options = {out: "file.jpg"}
+    options = RokuBuilder::Options.new(options: {build: true, working: true, out: "file.jpg"})
     parsed = RokuBuilder::ConfigParser.parse(options: options, config: config)
     refute_nil parsed[:out]
     refute_nil parsed[:out][:folder]

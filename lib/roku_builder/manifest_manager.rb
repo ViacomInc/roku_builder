@@ -17,8 +17,8 @@ module RokuBuilder
         build_version[1] = iteration
         build_version = build_version.join(".")
       else
-        #Use current date.
-        build_version = Time.now.strftime("%m%d%y")+".0001"
+        iteration = build_version[0].to_i + 1
+        build_version = iteration.to_s
       end
       self.update_manifest(root_dir: root_dir, attributes: {build_version: build_version})
       self.build_version(root_dir: root_dir)

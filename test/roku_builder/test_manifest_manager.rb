@@ -14,14 +14,11 @@ class ManifestManagerTest < Minitest::Test
     FileUtils.rm(File.join(root_dir, "manifest"))
   end
 
-  def test_manifest_manager_update_missing_build_number
+  def test_manifest_manager_update_single_part_build_number
     root_dir = File.join(File.dirname(__FILE__), "test_files", "manifest_manager_test")
     FileUtils.cp(File.join(root_dir, "manifest_template_2"), File.join(root_dir, "manifest"))
-    build_version = nil
-    Time.stub(:now, Time.new(2001, 02, 01)) do
-      build_version = RokuBuilder::ManifestManager.update_build(root_dir: root_dir)
-    end
-    assert_equal "020101.0001", build_version
+    build_version = RokuBuilder::ManifestManager.update_build(root_dir: root_dir)
+    assert_equal "2", build_version
     FileUtils.rm(File.join(root_dir, "manifest"))
   end
 

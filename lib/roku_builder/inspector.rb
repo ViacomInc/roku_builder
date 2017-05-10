@@ -70,7 +70,7 @@ module RokuBuilder
 
       response = conn.get path
 
-      File.open(File.join(out_folder, out_file), "w") do |io|
+      File.open(File.join(out_folder, out_file), "wb") do |io|
         io.write(response.body)
       end
       @logger.info "Screen captured to #{File.join(out_folder, out_file)}"

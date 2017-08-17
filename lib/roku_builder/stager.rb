@@ -5,10 +5,13 @@ module RokuBuilder
   # Change stage of roku application
   class Stager
 
-    def initialize(key: nil, method:, root_dir: nil)
-      @method = method
-      @key = key
-      @root_dir = root_dir
+    def initialize(config:, options:)
+      @config = config
+      @options = options
+      @method = get_method
+      @ref = get_git_ref
+      @scripts = get_scripts
+      @root_dir = config.root_dir
       @logger = Logger.instance
       @stage_success = true
       @stash_key = "roku-builder-temp-stash"
@@ -25,19 +28,22 @@ module RokuBuilder
     # @return [Boolean] whether the staging was successful or not
     def stage
       @orginal_directory = Dir.pwd
-      Dir.chdir(@root_dir) unless @root_dir.nil? or @root_dir == @orginal_directory
       case @method
-      when :current, :in, :working
+      when :current, :in
         # Do Nothing
+      when :working
+        switch_directory
       when :git
+        switch_directory
         begin
-          git_switch_to(branch: @key)
+          git_switch_to(branch: @ref)
         rescue Git::GitExecuteError
           git_rescue
           @stage_success = false
         end
       when :script
-        Controller.system(command: @key[:stage])
+        switch_directory
+        RokuBuilder.system(command: @scripts[:stage])
       end
       @stage_success
     end
@@ -46,26 +52,56 @@ module RokuBuilder
     # @return [Boolean] whether the revert was successful or not
     def unstage
       @orginal_directory ||= Dir.pwd
-      Dir.chdir(@root_dir) unless @root_dir.nil? or @root_dir == @orginal_directory
       unstage_success = true
       case @method
       when :current, :in, :working
         # Do Nothing
       when :git
+        switch_directory
         begin
-          git_switch_from(branch: @key, checkout: @stage_success)
+          git_switch_from(branch: @ref, checkout: @stage_success)
         rescue Git::GitExecuteError
           git_rescue
           unstage_success = false
         end
+        switch_directory_back
       when :script
-        Controller.system(command: @key[:unstage])  if @key[:unstage]
+        switch_directory
+        RokuBuilder.system(command: @scripts[:unstage])  if @scripts[:unstage]
+        switch_directory_back
       end
-      Dir.chdir(@orginal_directory) unless @root_dir == @orginal_directory
       unstage_success
     end
 
     private
+
+    def get_method
+      method = ([:in, :current, :working] & @options.keys).first
+      if @config.project
+        method = @config.project[:stage_method]
+      end
+      method
+    end
+
+    def get_git_ref
+      if @options[:ref]
+        @options[:ref]
+      elsif @config.stage
+        @config.stage[:branch]
+      end
+    end
+
+    def get_scripts
+      @config.stage[:script] if @config.stage
+    end
+
+    def switch_directory
+      Dir.chdir(@root_dir) unless @root_dir.nil? or @root_dir == @orginal_directory
+    end
+
+    def switch_directory_back
+      Dir.chdir(@orginal_directory) unless @root_dir == @orginal_directory
+    end
 
     # Switch to the correct branch
     # @param branch [String] the branch to switch to

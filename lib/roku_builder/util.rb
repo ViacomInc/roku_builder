@@ -1,33 +1,24 @@
 # ********** Copyright Viacom, Inc. Apache 2.0 **********
-
 module RokuBuilder
 
-  # Super class for device utilities
+  # Super class for modules
   # This class defines a common initializer and allows subclasses
   # to define their own secondary initializer
   class Util
 
     # Common initializer of device utils
-    # @param ip [String] IP address of roku device
-    # @param user [String] Username for roku device
-    # @param password [String] Password for roku device
-    def initialize(ip:, user:, password:, init_params: nil)
+    # @param config [Config] Configuration object for the app
+    def initialize(config: )
       @logger = Logger.instance
-      @device_config = {
-        ip: ip,
-        user: user,
-        password: password
-      }
-      @roku_ip_address = ip
-      @dev_username = user
-      @dev_password = password
+      @config = config
+      @roku_ip_address = @config.device_config[:ip]
+      @dev_username = @config.device_config[:user]
+      @dev_password = @config.device_config[:password]
       @url = "http://#{@roku_ip_address}"
-      if init_params
-        init(**init_params)
-      else
-        init
-      end
+      init
     end
+
+    private
 
     # Second initializer to be overwriten
     def init
@@ -56,21 +47,6 @@ module RokuBuilder
         f.request :url_encoded
         f.adapter Faraday.default_adapter
       end
-    end
-
-    # Parses a string into and options hash
-    # @param options [String] string of options in the format "a:b, c:d"
-    # @return [Hash] Options hash generated
-    def self.options_parse(options:)
-      parsed = {}
-      opts = options.split(/,\s*/)
-      opts.each do |opt|
-        opt = opt.split(":")
-        key = opt.shift.to_sym
-        value = opt.join(":")
-        parsed[key] = value
-      end
-      parsed
     end
   end
 end

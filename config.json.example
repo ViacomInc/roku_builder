@@ -33,7 +33,7 @@
       "password": "<password>"
     }
   },
-  "input_mapping": {
+  "input_mappings": {
     "\\e[1~": [ "home", "Home" ],
     "<": [ "rew", "<" ],
     ">": [ "ff", ">" ],

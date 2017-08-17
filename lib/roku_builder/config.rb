@@ -34,6 +34,7 @@ module RokuBuilder
     end
 
     def edit
+      load
       apply_options
       config_string = JSON.pretty_generate(@config)
       file = File.open(@options[:config], "w")
@@ -41,13 +42,34 @@ module RokuBuilder
       file.close
     end
 
-    def update
-      if @options[:build_version]
-        update_package_config
-        update_build_config
-        update_sideload_config
-        update_inspect_config
+    def configure
+      if @options[:configure]
+        source_config = File.expand_path(File.join(File.dirname(__FILE__), "..", '..', 'config.json.example'))
+        target_config = File.expand_path(@options[:config])
+        if File.exist?(target_config)
+          unless @options[:edit_params]
+            raise InvalidOptions, "Not overwriting config. Add --edit options to do so."
+          end
+        end
+        FileUtils.copy(source_config, target_config)
+        edit if @options[:edit_params]
       end
+    end
+
+    def root_dir=(root_dir)
+      @parsed[:root_dir] = root_dir
+    end
+
+    def in=(new_in)
+      @parsed[:in] = new_in
+    end
+
+    def out=(new_out)
+      @parsed[:out] = new_out
+    end
+
+    def method_missing(method)
+      @parsed[method]
     end
 
     private
@@ -132,22 +154,18 @@ module RokuBuilder
 
     def build_edit_state
       {
-        project: get_project_key,
-        device: get_device_key,
-        stage: get_stage_key(project: get_project_key)
+        project: get_key_for(:project),
+        device: get_key_for(:device),
+        stage: get_stage_key(project: get_key_for(:project))
       }
     end
 
-    def get_project_key
-      project = @options[:project].to_sym if @options[:project]
-      project ||= @config[:projects][:default]
+    def get_key_for(type)
+      project = @options[type].to_sym if @options[type]
+      project ||= @config[(type.to_s+"s").to_sym][:default]
       project
     end
-    def get_device_key
-      device = @options[:device].to_sym if @options[:device]
-      device ||= @config[:devices][:default]
-      device
-    end
+
     def get_stage_key(project:)
       stage = @options[:stage].to_sym if @options[:stage]
       stage ||= @config[:projects][project][:stages].keys[0].to_sym
@@ -157,7 +175,7 @@ module RokuBuilder
     # Apply the changes in the options string to the config object
     def apply_options
       state = build_edit_state
-      changes = Util.options_parse(options: @options[:edit_params])
+      changes = RokuBuilder.options_parse(options: @options[:edit_params])
       changes.each {|key,value|
         if [:ip, :user, :password].include?(key)
           @config[:devices][state[:device]][key] = value
@@ -167,36 +185,6 @@ module RokuBuilder
           @config[:projects][state[:project]][:stages][state[:stage]][key] = value
         end
       }
-    end
-
-    def update_package_config
-      if @parsed[:package_config]
-        @parsed[:package_config][:app_name_version] = "#{@parsed[:project_config][:app_name]} - #{@parsed[:stage]} - #{@options[:build_version]}"
-        @parsed[:package_config][:out_file] = out_file_path
-      end
-    end
-
-    def update_build_config
-      @parsed[:build_config][:out_file] = out_file_path if @parsed[:build_config]
-    end
-
-    def update_sideload_config
-      if @parsed[:sideload_config] and @options[:out]
-        @parsed[:sideload_config][:out_file] = out_file_path
-      end
-    end
-
-    def update_inspect_config
-      if @parsed[:inspect_config] and @parsed[:package_config]
-        @parsed[:inspect_config][:pkg] = @parsed[:package_config][:out_file]
-      end
-    end
-
-    def out_file_path
-      unless @parsed[:out][:file]
-        @parsed[:out][:file] = "#{@parsed[:project_config][:app_name]}_#{@parsed[:stage]}_#{@options[:build_version]}"
-      end
-      File.join(@parsed[:out][:folder], @parsed[:out][:file])
     end
   end
 end

@@ -17,10 +17,10 @@
 #
 # and, you'll have to watch "config/Guardfile" instead of "Guardfile"
 
-
 guard :minitest do
   # with Minitest::Unit
   watch(%r{^test/roku_builder/(.*)\/?test_(.*)\.rb$})
-  watch(%r{^lib/roku_builder/(.*/)?([^/]+)\.rb$})     { |m| "test/roku_builder/#{m[1]}test_#{m[2]}.rb" }
-  watch(%r{^test/roku_builder/test_helper\.rb$})      { 'test/roku_builder' }
+  watch(%r{^lib/roku_builder.rb$}) { "test/roku_builder/test_roku_builder.rb" }
+  watch(%r{^lib/roku_builder/(.*/)?([^/]+)\.rb$}) { |m| "test/roku_builder/#{m[1]}test_#{m[2]}.rb" }
+  watch(%r{^test/roku_builder/test_helper\.rb$}) { 'test/roku_builder' }
 end

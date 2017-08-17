@@ -23,21 +23,12 @@ module RokuBuilder
       process_in_argument
       setup_device
       setup_project
-      setup_outfile
+      setup_in_out_file
       setup_project_config
       setup_stage_config
-      setup_sideload_config
-      setup_package_config
-      setup_monitor_configs
-      setup_navigate_configs
-      setup_manifest_config
-      setup_deeplink_configs
-      setup_text_configs
-      setup_test_configs
-      setup_screencapture_configs
-      setup_screen_config
-      setup_profiler_configs
-      setup_genkey_configs
+      setup_key_config
+      setup_root_dir
+      setup_input_mappings
     end
 
     def process_in_argument
@@ -63,7 +54,7 @@ module RokuBuilder
 
     def project_required
       non_project_source = ([:current, :in] & @options.keys).count > 0
-      @options.source_command? and not non_project_source
+      @options.has_source? and not non_project_source
     end
 
     def current_project
@@ -83,34 +74,36 @@ module RokuBuilder
 
     def get_repo_path(project_config:)
       if @config[:projects][:project_dir]
-        repo_path = Pathname.new(File.join(@config[:projects][:project_dir], project_config[:directory])).realdirpath
+        Pathname.new(File.join(@config[:projects][:project_dir], project_config[:directory])).realdirpath
       else
-        repo_path = Pathname.new(project_config[:directory]).realdirpath
+        Pathname.new(project_config[:directory]).realdirpath
       end
     end
 
-    def setup_outfile
-      @parsed[:out] = {file: nil, folder: nil}
-      if @options[:out]
-        if out_file_defined?
-          setup_outfile_and_folder
-        else
-          @parsed[:out][:folder] = @options[:out]
+    def setup_in_out_file
+      [:in, :out].each do |type|
+        @parsed[type] = {file: nil, folder: nil}
+        if @options[type]
+          if file_defined?(type)
+            setup_file_and_folder(type)
+          elsif @options[type]
+            @parsed[type][:folder] = File.expand_path(@options[type])
+          end
         end
       end
       set_default_outfile
     end
 
-    def out_file_defined?
-      @options[:out].end_with?(".zip") or @options[:out].end_with?(".pkg") or @options[:out].end_with?(".jpg")
+    def file_defined?(type)
+      @options[type].end_with?(".zip") or @options[type].end_with?(".pkg") or @options[type].end_with?(".jpg")
     end
 
-    def setup_outfile_and_folder
-      @parsed[:out][:folder], @parsed[:out][:file] = Pathname.new(@options[:out]).split.map{|p| p.to_s}
-      if @parsed[:out][:folder] == "." and not @options[:out].start_with?(".")
-        @parsed[:out][:folder] = nil
+    def setup_file_and_folder(type)
+      @parsed[type][:folder], @parsed[type][:file] = Pathname.new(@options[type]).split.map{|p| p.to_s}
+      if @parsed[type][:folder] == "." and not @options[type].start_with?(".")
+        @parsed[type][:folder] = nil
       else
-        @parsed[:out][:folder] = File.expand_path(@parsed[:out][:folder])
+        @parsed[type][:folder] = File.expand_path(@parsed[type][:folder])
       end
     end
 
@@ -124,8 +117,8 @@ module RokuBuilder
       if @options[:current]
         stub_project_config_for_current
       elsif  project_required
-        @parsed[:project_config] = @config[:projects][@options[:project].to_sym]
-        raise ParseError, "Unknown Project: #{@options[:project]}" unless @parsed[:project_config]
+        @parsed[:project] = @config[:projects][@options[:project].to_sym]
+        raise ParseError, "Unknown Project: #{@options[:project]}" unless @parsed[:project]
         set_project_directory
         check_for_working
       end
@@ -133,8 +126,9 @@ module RokuBuilder
 
     def stub_project_config_for_current
       pwd =  Pathname.pwd.to_s
-      raise ParseError, "Missing Manifest" unless File.exist?(File.join(pwd, "manifest"))
-      @parsed[:project_config] = {
+      manifest = File.join(pwd, "manifest")
+      raise ParseError, "Missing Manifest: #{manifest}" unless File.exist?(manifest)
+      @parsed[:project] = {
         directory: pwd,
         folders: nil,
         files: nil,
@@ -144,99 +138,33 @@ module RokuBuilder
 
     def set_project_directory
       if @config[:projects][:project_dir]
-        @parsed[:project_config][:directory] = File.join(@config[:projects][:project_dir], @parsed[:project_config][:directory])
+        @parsed[:project][:directory] = File.join(@config[:projects][:project_dir], @parsed[:project][:directory])
       end
-      unless Dir.exist?(@parsed[:project_config][:directory])
-        raise ParseError, "Missing project dirtectory: #{@parsed[:project_config][:dirtectory]}"
+      unless Dir.exist?(@parsed[:project][:directory])
+        raise ParseError, "Missing project directory: #{@parsed[:project][:directory]}"
       end
     end
 
     def check_for_working
-      @parsed[:project_config][:stage_method] = :working if @options[:working]
+      @parsed[:project][:stage_method] = :working if @options[:working]
     end
 
 
     def setup_stage_config
-      setup_mininal_stage_configs
-      setup_project_stage_config if project_required
-    end
-
-    def setup_mininal_stage_configs
-      @parsed[:stage_config] = {}
-      @parsed[:stage_config][:method] = ([:in, :current] & @options.keys).first
-      @parsed[:stage] = @options[:stage].to_sym if @options[:stage]
-    end
-
-    def setup_project_stage_config
-      @parsed[:stage] ||= @parsed[:project_config][:stages].keys[0].to_sym
-      @parsed[:stage_config][:root_dir] = @parsed[:project_config][:directory]
-      raise ParseError, "Unknown Stage: #{@parsed[:stage]}" unless @parsed[:project_config][:stages][@parsed[:stage]]
-      setup_staging_method
-      setup_staging_key
-    end
-
-    def setup_staging_method
-      @parsed[:stage_config][:method] = @parsed[:project_config][:stage_method]
-      unless [:git, :script, :current, :working].include? @parsed[:stage_config][:method]
-        raise ParseError, "Unknown Stage Method: #{@parsed[:stage_config][:method]}"
-      end
-    end
-
-    def setup_staging_key
-      case @parsed[:stage_config][:method]
-      when :git
-        if @options[:ref]
-          @parsed[:stage_config][:key] = @options[:ref]
-        else
-          @parsed[:stage_config][:key] = @parsed[:project_config][:stages][@parsed[:stage]][:branch]
-        end
-      when :script
-        @parsed[:stage_config][:key] = @parsed[:project_config][:stages][@parsed[:stage]][:script]
-      end
-    end
-
-    def setup_sideload_config
-      root_dir, content = setup_project_values
-      # Create Sideload Config
-      @parsed[:sideload_config] = {
-        update_manifest: @options[:update_manifest],
-        infile: @options[:in],
-        content: content
-      }
-      # Create Build Config
-      @parsed[:build_config] = { content: content }
-      @parsed[:init_params][:loader] = { root_dir: root_dir }
-    end
-
-    def setup_project_values
-      if @parsed[:project_config]
-        root_dir = @parsed[:project_config][:directory]
-        content = {
-          folders: @parsed[:project_config][:folders],
-          files: @parsed[:project_config][:files],
-        }
-        content[:excludes] = @parsed[:project_config][:excludes] if add_excludes?
-        [root_dir, content]
-      else
-        [nil, nil]
-      end
-    end
-
-    def add_excludes?
-      @options[:exclude] or @options.exclude_command?
-    end
-
-    def setup_package_config
-      setup_key_config if @options[:package] or @options[:key]
-      if @options[:package]
-        setup_package_config_hashes
-        setup_package_config_out_files
+      if project_required
+        stage = @options[:stage].to_sym if @options[:stage]
+        stage ||= @parsed[:project][:stages].keys[0].to_sym
+        raise ParseError, "Unknown Stage: #{stage}" unless @parsed[:project][:stages][stage]
+        @parsed[:stage] = @parsed[:project][:stages][stage]
       end
     end
 
     def setup_key_config
-      @parsed[:key] = @parsed[:project_config][:stages][@parsed[:stage]][:key]
-      get_global_key_config if @parsed[:key].class == String
+      if @parsed[:stage]
+        @parsed[:key] = @parsed[:stage][:key]
+        get_global_key_config if @parsed[:key].class == String
+        test_key_file
+      end
     end
 
     def get_global_key_config
@@ -245,106 +173,27 @@ module RokuBuilder
       if @config[:keys][:key_dir]
         @parsed[:key][:keyed_pkg] = File.join(@config[:keys][:key_dir], @parsed[:key][:keyed_pkg])
       end
-      unless File.exist?(@parsed[:key][:keyed_pkg])
+    end
+
+    def test_key_file
+      if @parsed[:key] and not File.exist?(@parsed[:key][:keyed_pkg])
         raise ParseError, "Bad key file: #{@parsed[:key][:keyed_pkg]}"
       end
     end
 
-    def setup_package_config_hashes
-      @parsed[:package_config] = {
-        password: @parsed[:key][:password],
-        app_name_version: "#{@parsed[:project_config][:app_name]} - #{@parsed[:stage]}"
-      }
-      @parsed[:inspect_config] = {
-        password: @parsed[:key][:password]
-      }
-    end
-
-    def setup_package_config_out_files
-      if @parsed[:out][:file]
-        @parsed[:package_config][:out_file] = File.join(@parsed[:out][:folder], @parsed[:out][:file])
-        @parsed[:inspect_config][:pkg] = File.join(@parsed[:out][:folder], @parsed[:out][:file])
-      end
-    end
-
-    def setup_monitor_configs
-      if @options[:monitor]
-        @parsed[:monitor_config] = {type: @options[:monitor].to_sym}
-        if @options[:regexp]
-          @parsed[:monitor_config][:regexp] = /#{@options[:regexp]}/
-        end
-      end
-    end
-
-    def setup_navigate_configs
-      @parsed[:init_params][:navigator] = {mappings: generate_maggings}
-      if @options[:navigate]
-        @parsed[:navigate_config] = {
-          commands: @options[:navigate].split(/, */).map{|c| c.to_sym}
-        }
-      end
-    end
-
-    def generate_maggings
-      mappings = {}
-      if @config[:input_mapping]
-        @config[:input_mapping].each_pair {|key, value|
-          unless "".to_sym == key
-            key = key.to_s.sub(/\\e/, "\e").to_sym
-            mappings[key] = value
-          end
-        }
-      end
-      mappings
-    end
-
-    def setup_manifest_config
-      @parsed[:manifest_config] = {
-        root_dir: get_root_dir
-      }
+    def setup_root_dir
+      @parsed[:root_dir] = get_root_dir
     end
 
     def get_root_dir
-      root_dir = @parsed[:project_config][:directory] if @parsed[:project_config]
+      root_dir = @parsed[:project][:directory] if @parsed[:project]
       root_dir = @options[:in] if @options[:in]
       root_dir = Pathname.pwd.to_s if @options[:current]
       root_dir
-    end if
+    end
 
-    def setup_deeplink_configs
-      @parsed[:deeplink_config] = {options: @options[:deeplink]}
-      if @options[:app_id]
-        @parsed[:deeplink_config][:app_id] = @options[:app_id]
-      end
-    end
-    def setup_text_configs
-      @parsed[:text_config] = {text: @options[:text]}
-    end
-    def setup_test_configs
-      @parsed[:test_config] = {sideload_config: @parsed[:sideload_config]}
-      @parsed[:init_params][:tester] = { root_dir: get_root_dir }
-    end
-    def setup_screencapture_configs
-      @parsed[:screencapture_config] = {
-        out_folder: @parsed[:out][:folder],
-        out_file: @parsed[:out][:file]
-      }
-    end
-    def setup_screen_config
-      if @options[:screen]
-        @parsed[:screen_config] = {type: @options[:screen].to_sym}
-      end
-    end
-    def setup_profiler_configs
-      if @options[:profile]
-        @parsed[:profiler_config] = {command: @options[:profile].to_sym}
-      end
-    end
-    def setup_genkey_configs
-      @parsed[:genkey] = {}
-      if @options[:out_file]
-        @parsed[:genkey][:out_file] = File.join(@options[:out_folder], @options[:out_file])
-      end
+    def setup_input_mappings
+      @parsed[:input_mappings] = @config[:input_mappings]
     end
   end
 end

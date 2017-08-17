@@ -62,7 +62,7 @@ module RokuBuilder
     def validate_config
       @codes = []
       validate_structure
-      [:projects, :devices, :keys, :input_mapping].each do |section|
+      [:projects, :devices, :keys, :input_mappings].each do |section|
         validate_section(section: section) if @config[section]
       end
       @codes.uniq!

@@ -2,10 +2,17 @@
 
 module RokuBuilder
   class Options < Hash
-    def initialize(options: options)
-      merge!(options)
+    def initialize(options: nil)
       @logger = Logger.instance
-      validate
+      setup_plugin_commands
+      options ||= parse
+      merge!(options)
+    end
+
+    def validate
+      validate_commands
+      validate_sources
+      validate_deprivated
     end
 
     def command
@@ -17,7 +24,7 @@ module RokuBuilder
     end
 
     def source_command?
-      (source_commands & keys).count > 0
+      source_commands.include?(command)
     end
 
     def device_command?
@@ -30,11 +37,57 @@ module RokuBuilder
 
     private
 
-    def validate
-      validate_commands
-      validate_sources
-      validate_combinations
-      validate_deprivated
+    def setup_plugin_commands
+      RokuBuilder.plugins.each do |plugin|
+        plugin.commands.each do |command, attributes|
+          commands << command
+          [:device, :source, :exclude].each do |type|
+            if attributes[type]
+              send("#{type}_commands".to_sym) << command
+            end
+          end
+        end
+      end
+    end
+
+    def parse
+      options = {}
+      options[:config] = '~/.roku_config.json'
+      options[:update_manifest] = false
+      parser = OptionParser.new
+      parser.banner = "Usage: roku <command> [options]"
+      add_plugin_options(parser: parser, options:options)
+      validate_parser(parser: parser)
+      parser.parse!
+      options
+    end
+
+    def add_plugin_options(parser:, options:)
+      RokuBuilder.plugins.each do |plugin|
+        parser.separator ""
+        parser.separator "Options for #{plugin}:"
+        plugin.parse_options(parser: parser, options: options)
+      end
+    end
+
+    def validate_parser(parser:)
+      short = []
+      long = []
+      stack = parser.instance_variable_get(:@stack)
+      stack.each do |optionsList|
+        optionsList.each_option do |option|
+          if option.respond_to?(:short)
+            if short.include?(option.short.first)
+              raise ImplementationError, "Duplicate short option defined: #{option.short.first}"
+            end
+            short.push(option.short.first) if option.short.first
+            if long.include?(option.long.first)
+              raise ImplementationError, "Duplicate long option defined: #{option.long.first}"
+            end
+            long.push(option.long.first) if option.long.first
+          end
+        end
+      end
     end
 
     def validate_commands
@@ -51,16 +104,6 @@ module RokuBuilder
       end
     end
 
-    def validate_combinations
-      all_sources = keys & sources
-      if all_sources.include?(:current) and not (self[:build] or self[:sideload])
-        raise InvalidOptions, "Current source onle works for build or sideload"
-      end
-      if self[:in] and not self[:sideload]
-        raise InvalidOptions, "In source only works for sideloading"
-      end
-    end
-
     def validate_deprivated
       depricated = keys & depricated_options.keys
       if depricated.count > 0
@@ -73,41 +116,37 @@ module RokuBuilder
     # List of command options
     # @return [Array<Symbol>] List of command symbols that can be used in the options hash
     def commands
-      [:sideload, :package, :test, :deeplink,:configure, :validate, :delete,
-        :navigate, :navigator, :text, :build, :monitor, :update, :screencapture,
-        :key, :genkey, :screen, :screens, :applist, :print, :profile, :dostage,
-        :dounstage]
+      @commands ||= []
     end
 
     # List of depricated options
     # @return [Hash] Hash of depricated options and the warning message for each
     def depricated_options
-      {deeplink_depricated: "-L and --deeplink are depricated. Use -o or --deeplink-options." }
+      @depricated_options ||= {}
     end
 
     # List of source options
     # @return [Array<Symbol>] List of source symbols that can be used in the options hash
     def sources
-      [:ref, :set_stage, :working, :current, :in]
+      [:ref, :stage, :working, :current, :in]
     end
 
     # List of commands requiring a source option
     # @return [Array<Symbol>] List of command symbols that require a source in the options hash
     def source_commands
-      [:sideload, :package, :test, :build, :key, :update, :print]
+      @source_commands ||= []
     end
 
     # List of commands the activate the exclude files
     # @return [Array<Symbol] List of commands the will activate the exclude files lists
     def exclude_commands
-      [:build, :package]
+      @exclude_commands ||= []
     end
 
     # List of commands that require a device
     # @return [Array<Symbol>] List of commands that require a device
     def device_commands
-      [:sideload, :package, :test, :deeplink, :delete, :navigate, :navigator,
-        :text, :monitor, :screencapture, :applist, :profile, :key, :genkey ]
+      @device_commands ||= []
     end
   end
 end

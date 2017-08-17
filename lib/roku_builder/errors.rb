@@ -9,4 +9,16 @@ module RokuBuilder
 
   class InvalidOptions < StandardError
   end
+
+  class ManifestError < StandardError
+  end
+
+  class DeviceError < StandardError
+  end
+
+  class ExecutionError < StandardError
+  end
+
+  class ImplementationError < StandardError
+  end
 end

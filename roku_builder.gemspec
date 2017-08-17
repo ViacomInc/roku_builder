@@ -26,7 +26,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "git",                 "~> 1.3"
   spec.add_dependency "net-ping",            "~> 2.0"
   spec.add_dependency "net-telnet",          "~> 0.1"
-  spec.add_dependency "nokogiri",            "~> 1.7"
+  spec.add_dependency "oga",                 "~> 2.10"
   spec.add_dependency "win32-security",      "~> 0.5" # For windows compatibility
 
   spec.add_development_dependency "bundler",           "~> 1.7"
@@ -35,6 +35,8 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "minitest",          "~> 5.10"
   spec.add_development_dependency "minitest-autotest", "~> 1.0"
   spec.add_development_dependency "minitest-server",   "~> 1.0"
+  spec.add_development_dependency "minitest-utils",    "~> 0.3"
+  spec.add_development_dependency "webmock",           "~> 3.0"
   spec.add_development_dependency "simplecov",         "~> 0.12"
   spec.add_development_dependency "coveralls",         "~> 0.8"
   spec.add_development_dependency "yard",              "~> 0.9"

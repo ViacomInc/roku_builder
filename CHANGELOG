@@ -1,3 +1,48 @@
+ = 4.2.0 =
+
+ - Added `--sgperf` command to do performance reports
+ - Added `--devlog` command to turn on enhanced logging
+ - Added memmory profiler option to monitor image memmory usage
+ - Add 'roots' profiler option
+ - Add node id option to profiler
+ - images profiler option now sorts images by file size
+ - Improve formatting of verbose output of navigator
+
+ = 4.1.0 =
+
+ - Remove unnecessary default manifest values
+ - Print PKG path when packaging with --verbose
+ - Add build number to default out file name for packager
+ - Fail with useful message when packaging without configured key
+ - Monitor will check for used connection
+ - Screens command now prints all key combinations
+ - Replace nokogiri with oga
+
+ = 4.0.1 =
+
+ - Fix sideload bug
+
+ = 4.0.0 =
+
+ - Code base refactor for maintianability
+ - Add plugin architecture
+ - Add more profiler commands
+ - Replaced --deeplink-options command with just --deeplink
+ - Added Webmock to simplify tests
+ - Add basic intergration tests
+ - Move majority of documentation to Wiki
+ - Update to run on ruby-2.4.1
+ - Update dependancies
+
+ = 3.13.0 =
+
+ - Windows combatability
+ - Save screenshot using correct ext
+ - Allow integer build version
+ - Update Dependencies
+ - Code refactor
+ - Fixes for Test Suite
+
  = 3.12.8 =
 
  - Always print password/path from genkey

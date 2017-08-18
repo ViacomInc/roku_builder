@@ -158,7 +158,7 @@ module RokuBuilder
       end
       out_file = File.join(@config.out[:folder], @config.out[:file])
       out_file = out_file+".pkg" unless out_file.end_with?(".pkg")
-      File.open(out_file, 'w+') {|fp| fp.write(response.body)}
+      File.open(out_file, 'w+b') {|fp| fp.write(response.body)}
       @logger.info("Outfile: #{out_file}")
     end
 

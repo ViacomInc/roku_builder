@@ -89,12 +89,13 @@ module RokuBuilder
 
       unless out[:file]
         out[:file] = /time=([^"]*)">/.match(response.body)
-        out[:file] = "dev_#{out[:file][1]}.jpg" if out[:file]
+        out_ext = /dev.([^"]*)\?/.match(response.body)
+        out[:file] = "dev_#{out[:file][1]}.#{out_ext[1]}" if out[:file]
       end
 
       response = simple_connection.get path
 
-      File.open(File.join(out[:folder], out[:file]), "w") do |io|
+      File.open(File.join(out[:folder], out[:file]), "wb") do |io|
         io.write(response.body)
       end
       @logger.info "Screen captured to #{File.join(out[:folder], out[:file])}"

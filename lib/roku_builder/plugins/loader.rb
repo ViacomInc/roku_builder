@@ -154,12 +154,11 @@ module RokuBuilder
         else
           unless excludes.include?(zipFilePath)
             if File.exist?(diskFilePath)
-              file = diskFilePath.rindex(/\//)
-
-              if zipFilePath.end_with?("manifest", ".gif", ".png", ".brs", ".xml", ".jpg", ".json", ".mov", ".ttf", ".otf", ".p12", ".cer")
+              # Deny filetypes that aren't compatible with Roku to avoid Certification issues.
+              if !zipFilePath.end_with?(".pkg", ".md", ".zip")
                 io.get_output_stream(zipFilePath) { |f| f.puts(File.open(diskFilePath, "rb").read()) }
               else
-                @logger.warn "Ignored file with invalid Roku filetype " + diskFilePath[file, diskFilePath.length - file]
+                @logger.warn "Ignored file with invalid Roku filetype " + File.basename(diskFilePath)
               end
             else
               @logger.warn "Missing File: #{diskFilePath}"

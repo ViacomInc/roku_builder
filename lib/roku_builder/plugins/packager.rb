@@ -37,7 +37,9 @@ module RokuBuilder
     def package(options:)
       check_options(options)
       #sideload
-      Loader.new(config: @config).sideload(options: options)
+      loader = Loader.new(config: @config)
+      loader.sideload(options: options)
+      loader.squash(options: options) if @config.stage[:squash]
       #rekey
       key(options: options)
       #package

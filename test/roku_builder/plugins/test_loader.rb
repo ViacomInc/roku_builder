@@ -34,9 +34,10 @@ module RokuBuilder
       parser = OptionParser.new
       options = {}
       Loader.parse_options(parser: parser, options: options)
-      argv = ["roku", "-s", "-d", "-b", "-x"]
+      argv = ["roku", "-l", "--squash", "-d", "-b", "-x"]
       parser.parse! argv
       assert options[:sideload]
+      assert options[:squash]
       assert options[:delete]
       assert options[:build]
       assert options[:exclude]
@@ -110,6 +111,22 @@ module RokuBuilder
       loader = Loader.new(config: @config)
       assert_raises ExecutionError do
         loader.delete(options: @options)
+      end
+    end
+    def test_loader_squash
+      @request_stubs.push(stub_request(:post, "http://#{@device_config[:ip]}/plugin_install").
+        to_return(status: 200, body: "Conversion succeeded", headers: {}))
+
+      loader = Loader.new(config: @config)
+      loader.squash(options: @options)
+    end
+    def test_loader_squash_fail
+      @request_stubs.push(stub_request(:post, "http://#{@device_config[:ip]}/plugin_install").
+        to_return(status: 200, body: "Conversion failed", headers: {}))
+
+      loader = Loader.new(config: @config)
+      assert_raises ExecutionError do
+        loader.squash(options: @options)
       end
     end
     def test_copy_files

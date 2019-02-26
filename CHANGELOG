@@ -1,3 +1,7 @@
+ = 4.17.0 =
+
+ - Add ability to convert a package to squashfs
+
  = 4.16.1 =
 
  - Fixes for indentation checker

@@ -72,7 +72,6 @@ module RokuBuilder
         packager.package(options: options)
       end
     end
-
     def test_packager_package
       loader = Minitest::Mock.new
       inspector = Minitest::Mock.new
@@ -90,6 +89,54 @@ module RokuBuilder
         to_return(status: 200, body: body, headers: {}))
 
       loader.expect(:sideload, nil, [Hash])
+      io.expect(:write, nil, ["package_body"])
+      inspector.expect(:inspect, nil, [Hash])
+
+      logger.expect(:debug, nil, [String])
+      io.expect(:each_line, nil)
+      logger.expect(:info, nil) do |message|
+        assert_match(/\/tmp\//, message)
+      end
+
+      Logger.class_variable_set(:@@instance, logger)
+      packager = Packager.new(config: config)
+      dev_id = Proc.new {"#{Random.rand(999999999999)}"}
+      Loader.stub(:new, loader) do
+        Time.stub(:now, Time.at(0)) do
+          File.stub(:open, nil, io) do
+            Inspector.stub(:new, inspector) do
+              packager.stub(:dev_id, dev_id) do
+                packager.package(options: options)
+              end
+            end
+          end
+        end
+      end
+      io.verify
+      loader.verify
+      inspector.verify
+      logger.verify
+    end
+    def test_packager_package_squash
+      loader = Minitest::Mock.new
+      inspector = Minitest::Mock.new
+      io = Minitest::Mock.new
+      logger = Minitest::Mock.new
+      config = good_config(PackagerTest)
+      config[:projects][:project1][:stages][:production][:squash] = true
+      config, options = build_config_options_objects(PackagerTest, {package: true, stage: "production", inspect_package: true, verbose: true}, false, config)
+
+      @requests.push(stub_request(:post, "http://192.168.0.100/plugin_inspect").
+        to_return(status: 200, body: "", headers: {}).times(2))
+      body = "<a href=\"pkgs\">pkg_url</a>"
+      @requests.push(stub_request(:post, "http://192.168.0.100/plugin_package").
+        to_return(status: 200, body: body, headers: {}).times(2))
+      body = "package_body"
+      @requests.push(stub_request(:get, "http://192.168.0.100/pkgs/pkg_url").
+        to_return(status: 200, body: body, headers: {}))
+
+      loader.expect(:sideload, nil, [Hash])
+      loader.expect(:squash, nil, [Hash])
       io.expect(:write, nil, ["package_body"])
       inspector.expect(:inspect, nil, [Hash])
 

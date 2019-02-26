@@ -10,7 +10,8 @@ module RokuBuilder
       {
         sideload: {source: true, device: true, stage: true},
         build: {source: true, stage: true, exclude: true},
-        delete: {device: true}
+        delete: {device: true},
+        squash: {device: true}
       }
     end
 
@@ -24,6 +25,9 @@ module RokuBuilder
       end
       parser.on("-b", "--build", "Build a zip to be sideloaded") do
         options[:build] = true
+      end
+      parser.on("--squash", "Convert currently sideloaded application to squashfs") do
+        options[:squash] = true
       end
       parser.separator "Options:"
       parser.on("-x", "--exclude", "Apply exclude config to sideload") do
@@ -67,6 +71,15 @@ module RokuBuilder
       response  = multipart_connection.post "/plugin_install", payload
       unless response.status == 200 and response.body =~ /Delete Succeeded/ or ignoreFailure
         raise ExecutionError, "Failed Unloading"
+      end
+    end
+
+    # Convert sideloaded app to squashfs
+    def squash(options:, ignoreFailure: false)
+      payload =  {mysubmit: "Convert to squashfs", archive: ""}
+      response  = multipart_connection.post "/plugin_install", payload
+      unless response.status == 200 and response.body =~ /Conversion succeeded/ or ignoreFailure
+        raise ExecutionError, "Failed Converting to Squashfs"
       end
     end
 

@@ -1,3 +1,8 @@
+ = 4.17.1 =
+
+ - Remove requirement for project default in config
+ - Remove testing of sd icon resolution
+
  = 4.17.0 =
 
  - Add ability to convert a package to squashfs

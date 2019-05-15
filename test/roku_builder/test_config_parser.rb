@@ -186,7 +186,7 @@ module RokuBuilder
       config[:projects][:project2][:directory] = "project2"
 
       configs = nil
-      Pathname.stub(:pwd, Pathname.new("/tmp/project2")) do
+      Pathname.stub(:pwd, Pathname.new("/tmp/project2").realdirpath) do
         Dir.stub(:exist?, true) do
           configs = ConfigParser.parse(options: options, config: config)
         end
@@ -289,7 +289,7 @@ module RokuBuilder
       refute_nil parsed[:out]
       refute_nil parsed[:out][:folder]
       assert_nil parsed[:out][:file]
-      assert_equal "/tmp", parsed[:out][:folder]
+      assert_equal tmp_folder, parsed[:out][:folder]
     end
     def test_outfile_config_folder
       config = good_config(ConfigParserTest)
@@ -342,7 +342,7 @@ module RokuBuilder
       refute_nil parsed[:out]
       refute_nil parsed[:out][:folder]
       refute_nil parsed[:out][:file]
-      assert_equal "/tmp", parsed[:out][:folder]
+      assert_equal tmp_folder, parsed[:out][:folder]
       assert_equal "file.jpg", parsed[:out][:file]
     end
   end

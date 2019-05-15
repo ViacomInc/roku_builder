@@ -113,8 +113,7 @@ module RokuBuilder
         [MISSING_DEVICES, !@config[:devices]],
         [MISSING_DEVICES_DEFAULT, (@config[:devices] and !@config[:devices][:default])],
         [DEVICE_DEFAULT_BAD, (@config[:devices] and @config[:devices][:default] and !@config[:devices][:default].is_a?(Symbol))],
-        [MISSING_PROJECTS_DEFAULT, (@config[:projects] and !@config[:projects][:default])],
-        [MISSING_PROJECTS_DEFAULT, (@config[:projects] and @config[:projects][:default] == "<project id>".to_sym)],
+        [MISSING_PROJECTS_DEFAULT, (@config[:projects] and @config[:projects][:default] and @config[:projects][:default] == "<project id>".to_sym)],
         [PROJECTS_DEFAULT_BAD, (@config[:projects] and @config[:projects][:default] and !@config[:projects][:default].is_a?(Symbol))]
       ]
       process_errors(errors: errors)

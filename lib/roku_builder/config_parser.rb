@@ -46,9 +46,10 @@ module RokuBuilder
         project = current_project
         if project
           @options[:project] = project
-        else
+        elsif @config[:projects][:default]
           @options[:project] = @config[:projects][:default]
         end
+        raise ArgumentError, "A project is required for that command" unless @options[:project]
       end
     end
 

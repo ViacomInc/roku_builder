@@ -61,6 +61,10 @@ def build_options(options = {validate: true}, empty_plugins = true)
   options
 end
 
+def tmp_folder()
+  Dir.tmpdir()
+end
+
 def good_config(klass=nil)
   root_dir = "/tmp"
   root_dir = test_files_path(klass) if klass

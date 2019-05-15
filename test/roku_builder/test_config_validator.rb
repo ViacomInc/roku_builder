@@ -100,13 +100,6 @@ module RokuBuilder
       assert validator.is_valid?
     end
 
-    def test_config_manager_validate_projects_default
-      config = good_config
-      config[:projects][:default] = nil
-      validator = ConfigValidator.new(config: config)
-      assert_equal [5], validator.instance_variable_get(:@codes)
-    end
-
     def test_config_manager_validate_projects_default_default_value
       config = good_config
       config[:projects][:default] = "<project id>".to_sym

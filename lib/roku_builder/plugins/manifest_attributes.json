@@ -33,12 +33,7 @@
     "resolution": [336, 210]
   },
   "mm_icon_focus_sd": {
-    "required": true,
-    "validations": {
-      "starts_with": "pkg:/"
-    },
-    "isResource": true,
-    "resolution": [246, 140]
+    "required": true
   },
   "splash_screen_fhd": {
     "validations": {

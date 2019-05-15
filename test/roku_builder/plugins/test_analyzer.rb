@@ -160,6 +160,10 @@ module RokuBuilder
       assert_equal 5, warnings[0][:line]
       assert_equal "manifest", warnings[0][:path]
     end
+    def test_manifest_sd_image_resolution
+      warnings = test_manifest("manifest_sd_image_resolution")
+      assert_equal 0, warnings.count
+    end
     def test_line_inspector_depricated_component
       warnings = test_file(text: "\"roVideoScreen\"")
       assert_equal 1, warnings.count

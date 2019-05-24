@@ -3,9 +3,7 @@
 module RokuBuilder
 
   class LineInspector
-    def initialize(config:, raf:, inspector_config:, indent_config:)
-      @config = config
-      @raf_inspector = raf
+    def initialize(inspector_config:, indent_config:)
       @inspector_config = inspector_config
       @indent_config = indent_config
     end
@@ -45,7 +43,6 @@ module RokuBuilder
               end
             end
           end
-          @raf_inspector.inspect_line(line: line, file: file_path, line_number: line_number)
         end
         @warnings += indent_inspector.warnings if indent_inspector
       end

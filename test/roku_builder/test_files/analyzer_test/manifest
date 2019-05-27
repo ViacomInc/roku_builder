@@ -1,0 +1,9 @@
+title=Test
+major_version=1
+minor_version=0
+build_version=01
+mm_icon_focus_hd=pkg:/images/focus_hd.png
+mm_icon_focus_sd=pkg:/images/focus_sd.png
+splash_screen_hd=pkg:/images/splash_hd.png
+splash_screen_sd=pkg:/images/splash_sd.png
+splash_color=#121212

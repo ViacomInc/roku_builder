@@ -36,6 +36,7 @@ module RokuBuilder
       loader = Loader.new(config: @config)
       Dir.mktmpdir do |dir|
         loader.copy(options: options, path: dir)
+        run_sca_tool(path: dir)
         libraries = @config.project[:libraries]
         libraries ||= []
         Dir.glob(File.join(dir, "**", "*")).each do |file_path|
@@ -56,6 +57,34 @@ module RokuBuilder
     end
 
     private
+
+    def run_sca_tool(path:)
+      if OS.unix?
+         command = File.join(File.dirname(__FILE__), "sca-cmd", "bin", "sca-cmd")
+      else
+        command = File.join(File.dirname(__FILE__), "sca-cmd", "bin", "sca-cmd.bat")
+      end
+      results = `#{command} #{path}`.split("\n")
+      process_sca_results(results)
+    end
+
+    def process_sca_results(results)
+      results.each do |result_line|
+        if /-----+/.match(result_line) or /\*\*\*\*\*+/.match(result_line)
+          @warnings.push(@sca_warning) if @sca_warning
+          @sca_warning = {}
+        elsif data = /^(\[WARNING\]|\[INFO\]|\[ERROR\])(.*)$/.match(result_line)
+          @warnings.push(@sca_warning) if @sca_warning
+          @sca_warning = {}
+          @sca_warning[:severity] = data[1].gsub(/(\[|\])/, "").downcase
+          @sca_warning[:message] = data[2]
+        elsif data = /^\sPath: ([^ ]*) Line: (\d*)./.match(result_line)
+          @sca_warning[:path] = data[1]+":"+data[2]
+        elsif @sca_warning and  @sca_warning[:message]
+          @sca_warning[:message] += " " + result_line
+        end
+      end
+    end
 
     def get_config(file, project_root=false)
       if project_root

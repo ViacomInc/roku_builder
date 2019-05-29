@@ -84,6 +84,7 @@ module RokuBuilder
     def test_library_skip
       set_config({libraries: ["/source/test.brs"]})
       warnings = test_file(text: "\"roRegex\"")
+      puts warnings
       assert_equal 0, warnings.count
     end
     def test_library_skip_folder

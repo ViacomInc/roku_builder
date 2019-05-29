@@ -7,3 +7,4 @@ mm_icon_focus_sd=pkg:/images/focus_sd.png
 splash_screen_hd=pkg:/images/splash_hd.png
 splash_screen_sd=pkg:/images/splash_sd.png
 empty
+supports_input_launch=1

@@ -32,11 +32,11 @@ module RokuBuilder
       @warnings = []
       performance_config = get_config("performance_config.json")
       linter_config = get_config(".roku_builder_linter.json", true)
-      linter_config ||= {}
+      linter_config ||= {is_ssai: false}
       loader = Loader.new(config: @config)
       Dir.mktmpdir do |dir|
         loader.copy(options: options, path: dir)
-        run_sca_tool(path: dir)
+        run_sca_tool(path: dir, ssai: linter_config[:is_ssai])
         libraries = @config.project[:libraries]
         libraries ||= []
         Dir.glob(File.join(dir, "**", "*")).each do |file_path|
@@ -58,23 +58,23 @@ module RokuBuilder
 
     private
 
-    def run_sca_tool(path:)
+    def run_sca_tool(path:, ssai:)
       if OS.unix?
          command = File.join(File.dirname(__FILE__), "sca-cmd", "bin", "sca-cmd")
       else
         command = File.join(File.dirname(__FILE__), "sca-cmd", "bin", "sca-cmd.bat")
       end
       results = `#{command} #{path}`.split("\n")
-      process_sca_results(results)
+      process_sca_results(results, ssai)
     end
 
-    def process_sca_results(results)
+    def process_sca_results(results, ssai)
       results.each do |result_line|
         if /-----+/.match(result_line) or /\*\*\*\*\*+/.match(result_line)
-          @warnings.push(@sca_warning) if @sca_warning
+          @warnings.push(@sca_warning) if add_warning?(ssai)
           @sca_warning = {}
         elsif data = /^(\[WARNING\]|\[INFO\]|\[ERROR\])(.*)$/.match(result_line)
-          @warnings.push(@sca_warning) if @sca_warning
+          @warnings.push(@sca_warning) if add_warning?(ssai)
           @sca_warning = {}
           @sca_warning[:severity] = data[1].gsub(/(\[|\])/, "").downcase
           @sca_warning[:message] = data[2]
@@ -84,6 +84,16 @@ module RokuBuilder
           @sca_warning[:message] += " " + result_line
         end
       end
+    end
+
+    def add_warning?(ssai)
+      if @sca_warning and @sca_warning[:severity]
+        if ssai and /SetAdUrl\(\) method is missing/.match(@sca_warning[:message])
+          return false
+        end
+        return true
+      end
+      return false
     end
 
     def get_config(file, project_root=false)

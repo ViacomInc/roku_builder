@@ -6,6 +6,10 @@ module RokuBuilder
   class Loader < Util
     extend Plugin
 
+    def init
+      @warningFileSize = 250 * 1024
+    end
+
     def self.commands
       {
         sideload: {source: true, device: true, stage: true},
@@ -153,6 +157,10 @@ module RokuBuilder
         else
           unless excludes.include?(zipFilePath)
             if File.exist?(diskFilePath)
+              if File.size(diskFilePath) > @warningFileSize
+                ignorePath = File.join(File.dirname(diskFilePath), "ignoreSize_"+File.basename(diskFilePath))
+                @logger.warn "Adding Large File: #{diskFilePath}" unless File.exist?(ignorePath)
+              end
               # Deny filetypes that aren't compatible with Roku to avoid Certification issues.
               if !zipFilePath.end_with?(".pkg", ".md", ".zip")
                 io.get_output_stream(zipFilePath) { |f| f.puts(File.open(diskFilePath, "rb").read()) }

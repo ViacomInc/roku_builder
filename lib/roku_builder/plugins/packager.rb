@@ -161,9 +161,13 @@ module RokuBuilder
       out_file = File.join(@config.out[:folder], @config.out[:file])
       out_file = out_file+".pkg" unless out_file.end_with?(".pkg")
       File.open(out_file, 'w+b') {|fp| fp.write(response.body)}
-      pkg_size = File.size(out_file).to_f / 2**20
-      raise ExecutionError, "PKG file size is too large (#{pkg_size.round(2)} MB): #{out_file}" if pkg_size > 4.0
-      @logger.info("Outfile: #{out_file}")
+      if File.exist?(out_file)
+        pkg_size = File.size(out_file).to_f / 2**20
+        raise ExecutionError, "PKG file size is too large (#{pkg_size.round(2)} MB): #{out_file}" if pkg_size > 4.0
+        @logger.info("Outfile: #{out_file}")
+      else
+        @logger.warn("Outfile Missing: #{out_file}")
+      end
     end
 
     # Uses the device to generate a new signing key

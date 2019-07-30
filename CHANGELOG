@@ -1,3 +1,7 @@
+ = 4.20.0 =
+
+ - Add file size warning
+
  = 4.19.0 =
 
  - Add pkg file size check. Package command now fails if the pkg file is

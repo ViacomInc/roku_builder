@@ -94,7 +94,7 @@ module RokuBuilder
 
       logger.expect(:debug, nil, [String])
       io.expect(:each_line, nil)
-      logger.expect(:info, nil) do |message|
+      logger.expect(:warn, nil) do |message|
         assert_match(/#{tmp_folder}/, message)
       end
 
@@ -142,7 +142,7 @@ module RokuBuilder
 
       logger.expect(:debug, nil, [String])
       io.expect(:each_line, nil)
-      logger.expect(:info, nil) do |message|
+      logger.expect(:warn, nil) do |message|
         assert_match(/#{tmp_folder}/, message)
       end
 

@@ -53,6 +53,7 @@ module RokuBuilder
       when :plugin
         @plugin.stage(options: @options)
       end
+      RokuBuilder.process_hook(hook: "post_stage", params: {config: @config, options: @options})
       @stage_success
     end
 
@@ -87,6 +88,7 @@ module RokuBuilder
       when :plugin
         @plugin.unstage(options: @options)
       end
+      RokuBuilder.process_hook(hook: "post_unstage", params: {config: @config, options: @options})
       unstage_success
     end
 

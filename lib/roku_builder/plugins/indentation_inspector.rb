@@ -14,10 +14,10 @@ module RokuBuilder
     end
 
     def check_line(line:, number:)
-      #byebug if number == 191 and @path.ends_with?("EpisodeGuide.animation.brs")
+      #byebug if number == 43 and @path.ends_with?("keyEvents.brs")
       set_indentation(line: line)
       regexp = /^#{@character}{#{@ind}}[^#{@character}]/
-      unless line =~ regexp or line == "\n"
+      unless line =~ regexp or line == "\n" or line =~ /\'indent-ignore/
         add_warning(line: number)
       end
       @prev_line = line
@@ -37,33 +37,37 @@ module RokuBuilder
           end
         end
       when :brs
-        if @prev_line
-          if @prev_line =~ /^\'/
-            # Don't change indentation
-          elsif @prev_line =~ /[\{\[\(:]$/
-            @ind += @count
-          elsif @prev_line =~ /:\s*\bfunction\b|:\s*\bsub\b/i
-            @ind += @count
-          elsif @prev_line =~ /^\s*\bfunction\b|^\s*\bsub\b/i
-            @ind += @count
-          elsif @prev_line =~ /^\s*#?if\b|^\s*#?else\b/i
-            unless @prev_line =~ /\bthen\b[ \t ]*[^' \r\n']+.*$/i or @prev_line =~ /\breturn\b/i
+        if line =~ /'indent-reset/
+          @ind = line.index(/[^#{@character}]/)
+        else
+          if @prev_line
+            if @prev_line =~ /^\'/ or @prev_line =~ /\'indent-ignore/
+              # Don't change indentation
+            elsif @prev_line =~ /[\{\[\(:]$/
+              @ind += @count
+            elsif @prev_line =~ /:\s*\bfunction\b|:\s*\bsub\b/i
+              @ind += @count
+            elsif @prev_line =~ /^\s*\bfunction\b|^\s*\bsub\b/i
+              @ind += @count
+            elsif @prev_line =~ /^\s*#?if\b|^\s*#?else\b/i
+              unless @prev_line =~ /\bthen\b[ \t ]*[^' \r\n']+.*$/i or @prev_line =~ /\breturn\b/i
+                @ind += @count
+              end
+            elsif @prev_line =~ /^\s*\bfor\b|^\s*\bwhile\b/i
               @ind += @count
             end
-          elsif @prev_line =~ /^\s*\bfor\b|^\s*\bwhile\b/i
-            @ind += @count
           end
-        end
-        if line =~ /^\'/
-          # Don't change indentation
-        elsif line =~ /^\s*[\}\]\)]/
-          @ind -= @count
-        elsif line =~ /^\s*\bfunction\b|^\s*\bsub\b/i
-          @ind -= 0
-        elsif line =~ /^\s*:?\s*#?end\b|^\s*#?endif\b|^\s*endfor\b|^\s*\bnext\b/i
-          @ind -= @count
-        elsif line =~ /^\s*#?else\b|^\s*elseif\b/i
-          @ind -= @count
+          if line =~ /^\'/ or line =~ /\'indent-ignore/
+            # Don't change indentation
+          elsif line =~ /^\s*[\}\]\)]/
+            @ind -= @count
+          elsif line =~ /^\s*\bfunction\b|^\s*\bsub\b/i
+            @ind -= 0
+          elsif line =~ /^\s*:?\s*#?end\b|^\s*#?endif\b|^\s*endfor\b|^\s*\bnext\b/i
+            @ind -= @count
+          elsif line =~ /^\s*#?else\b|^\s*elseif\b/i
+            @ind -= @count
+          end
         end
       end
     end

@@ -1,3 +1,7 @@
+ = 4.20.2 =
+
+ -Fix bundler load paths for later versions of ruby
+
  = 4.20.1 =
 
  -Add indent-ignore and indent-reset comment processing to analyzer

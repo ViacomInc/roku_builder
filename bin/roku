@@ -4,6 +4,8 @@
 $:.unshift File.join(File.dirname(__FILE__), "..", "lib")
 
 #require "byebug"
+require "rubygems"
+require "bundler/setup"
 require "roku_builder"
 
 RokuBuilder.run()

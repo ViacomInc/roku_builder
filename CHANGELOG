@@ -1,10 +1,18 @@
- = 4.20.2 =
+ = 4.21.3 =
 
- -Fix bundler load paths for later versions of ruby
+ - Ignore indentation in multi-line xml comments
 
- = 4.20.1 =
+ = 4.21.2 =
 
- -Add indent-ignore and indent-reset comment processing to analyzer
+ - Fix bundler load paths for later versions of ruby
+
+ = 4.21.1 =
+
+ - Add indent-ignore and indent-reset comment processing to analyzer
+
+ = 4.21.0 =
+
+ - Add post stage/unstage hooks
 
  = 4.20.0 =
 

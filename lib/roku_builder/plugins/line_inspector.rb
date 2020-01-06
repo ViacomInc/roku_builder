@@ -14,7 +14,6 @@ module RokuBuilder
         in_xml_comment = false
         indent_inspector = IndentationInspector.new(rules: @indent_config, path: file_path) if @indent_config
         file.readlines.each_with_index do |line, line_number|
-          indent_inspector.check_line(line: line, number: line_number) if indent_inspector
           full_line = line.dup
           line = line.partition("'").first if file_path.end_with?(".brs")
           if file_path.end_with?(".xml")
@@ -28,6 +27,7 @@ module RokuBuilder
             line.gsub!(/<!--.*-->/, "")
             in_xml_comment = true if line.gsub!(/<!--.*/, "")
           end
+          indent_inspector.check_line(line: full_line, number: line_number, comment: in_xml_comment) if indent_inspector
           @inspector_config.each do |line_inspector|
             line_to_check = line
             line_to_check = full_line if line_inspector[:include_comments]

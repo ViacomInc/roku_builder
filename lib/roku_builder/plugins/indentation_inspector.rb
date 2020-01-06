@@ -13,11 +13,11 @@ module RokuBuilder
       @ind = 0
     end
 
-    def check_line(line:, number:)
-      #byebug if number == 43 and @path.ends_with?("keyEvents.brs")
+    def check_line(line:, number:, comment:)
+      #byebug if number == 10 and @path.ends_with?(".brs")
       set_indentation(line: line)
       regexp = /^#{@character}{#{@ind}}[^#{@character}]/
-      unless line =~ regexp or line == "\n" or line =~ /\'indent-ignore/
+      unless line =~ regexp or line == "\n" or line =~ /\'indent-ignore/ or comment
         add_warning(line: number)
       end
       @prev_line = line

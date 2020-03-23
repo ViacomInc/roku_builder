@@ -37,6 +37,9 @@ module RokuBuilder
       parser.on("-x", "--exclude", "Apply exclude config to sideload") do
         options[:exclude] = true
       end
+      parser.on("--remote-debug", "Sideload will enable remote debug") do
+        options[:remoteDebug] = true
+      end
     end
 
     def self.dependencies
@@ -52,7 +55,7 @@ module RokuBuilder
         build(options: options)
       end
       keep_build_file = is_build_command(options) and options[:out]
-      upload
+      upload(options)
       # Cleanup
       File.delete(file_path(:in)) if did_build and not keep_build_file
     end
@@ -99,11 +102,12 @@ module RokuBuilder
       [:sideload, :build].include? options.command
     end
 
-    def upload
+    def upload(options)
       payload =  {
         mysubmit: "Replace",
-        archive: Faraday::UploadIO.new(file_path(:in), 'application/zip')
+        archive: Faraday::UploadIO.new(file_path(:in), 'application/zip'),
       }
+      payload["remotedebug"] = "1" if options[:remoteDebug]
       response = multipart_connection.post "/plugin_install", payload
       @logger.debug("Status: #{response.status}, Body: #{response.body}")
       if response.status==200 and response.body=~/Identical to previous version/

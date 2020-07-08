@@ -7,7 +7,7 @@ module RokuBuilder
     extend Plugin
 
     def init
-      @warningFileSize = 250 * 1024
+      @warningFileSize = 500 * 1024
     end
 
     def self.commands

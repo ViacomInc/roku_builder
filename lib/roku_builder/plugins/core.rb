@@ -77,7 +77,6 @@ module RokuBuilder
       end
       parser.on("-h", "--help [PLUGIN]", "Show help") do |h|
         plugin = self.get_plugin_by_name(h)
-        puts plugin
         if nil == plugin
           puts parser
         else

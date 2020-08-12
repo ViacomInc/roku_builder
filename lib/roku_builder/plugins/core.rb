@@ -76,16 +76,8 @@ module RokuBuilder
         options[:debug] = true
       end
       parser.on("-h", "--help [PLUGIN]", "Show help") do |h|
-        plugin = self.get_plugin_by_name(h)
-        if nil == plugin
-          puts parser
-        else
-          pluginParser = OptionParser.new
-          pluginParser.separator ""
-          pluginParser.separator "Options for #{plugin}:"
-          plugin.parse_options(parser: pluginParser, options: options)
-          puts pluginParser
-        end
+        help_text = self.get_help_text(parser: parser, options: options, plugin_name: h)
+        puts help_text
         exit
       end
       parser.on("-v", "--version", "Show version") do
@@ -122,12 +114,26 @@ module RokuBuilder
       Stager.new(config: @config, options: options).unstage
     end
 
+    def self.get_help_text(parser:, options:, plugin_name:)
+      plugin = self.get_plugin_by_name(plugin_name)
+      puts parser
+      if nil == plugin
+        return parser.to_s
+      else
+        pluginParser = OptionParser.new
+        pluginParser.separator ""
+        pluginParser.separator "Options for #{plugin}:"
+        plugin.parse_options(parser: pluginParser, options: options)
+        return pluginParser.to_s
+      end
+    end
+
     def self.get_plugin_by_name(name)
       if name.nil?
         return nil
       end
       pluginIndex = RokuBuilder.plugins.map{|pluginClass| pluginClass.name.split('::').last().downcase}.index(name.downcase)
-     if !pluginIndex.nil?
+      if !pluginIndex.nil?
         plugin = RokuBuilder.plugins[pluginIndex]
         return plugin
       end

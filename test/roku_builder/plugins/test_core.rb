@@ -108,6 +108,25 @@ module RokuBuilder
         core.dounstage(options: options)
       end
     end
+    def test_core_help
+      parser = OptionParser.new
+      options = {}
+      help_text = Core.get_help_text(parser: parser, options: options, plugin_name: nil)
+      assert help_text
+    end
+    def test_core_help_plugin
+      parser = OptionParser.new
+      options = {}
+      help_text = Core.get_help_text(parser: parser, options: options, plugin_name: "Loader")
+      assert help_text
+    end
+    def test_core_get_plugin_by_name
+      parser = OptionParser.new
+      options = {}
+      plugin_name = Core.get_plugin_by_name("loader")
+      assert plugin_name
+      assert_match "RokuBuilder::Loader", plugin_name.to_s
+    end
   end
 end
 

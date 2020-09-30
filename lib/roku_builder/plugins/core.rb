@@ -116,7 +116,6 @@ module RokuBuilder
 
     def self.get_help_text(parser:, options:, plugin_name:)
       plugin = self.get_plugin_by_name(plugin_name)
-      puts parser
       if nil == plugin
         return parser.to_s
       else

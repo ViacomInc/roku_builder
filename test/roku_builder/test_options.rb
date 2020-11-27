@@ -32,14 +32,13 @@ module RokuBuilder
     end
     def test_options_parse
       parser = Minitest::Mock.new()
-      options_hash = {}
       options = Options.allocate
       parser.expect(:banner=, nil, [String])
       parser.expect(:parse!, nil)
       OptionParser.stub(:new, parser) do
         options.stub(:add_plugin_options, nil) do
           options.stub(:validate_parser, nil) do
-            options_hash = options.send(:parse)
+            options.send(:parse)
           end
         end
       end

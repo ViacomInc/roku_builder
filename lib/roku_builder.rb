@@ -200,7 +200,7 @@ module RokuBuilder
           stager.stage
         end
         instance = plugin.new(config: @@config)
-        instance.send(@@options.command, {options: @@options})
+        instance.send(@@options.command, **{options: @@options})
         stager.unstage if stager
       end
     end
@@ -224,7 +224,7 @@ module RokuBuilder
   def self.process_hook(hook:, params:)
     @@plugins.each do |plugin|
       if plugin.respond_to?("#{hook}_hook".to_sym)
-        plugin.send("#{hook}_hook", params)
+        plugin.send("#{hook}_hook", **params)
       end
     end
   end

@@ -89,7 +89,7 @@ module RokuBuilder
       attrs = {}
       attrs[section_singular] = content
       method = "validate_#{section_singular}".to_sym
-      send(method, attrs)
+      send(method, **attrs)
     end
 
     def singularize(section:)

@@ -30,6 +30,7 @@ module RokuBuilder
     def analyze(options:, quiet: false)
       @options = options
       @warnings = []
+      @sca_warning = {}
       performance_config = get_config("performance_config.json")
       linter_config = get_config(".roku_builder_linter.json", true)
       linter_config ||= {is_ssai: false}

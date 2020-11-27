@@ -32,7 +32,8 @@ module RokuBuilder
       end
       count = 0
       read_stub = Proc.new do |size|
-        raise SystemExit if count = 2
+        shouldExit = (count = 2)
+        raise SystemExit if shouldExit
         count += 1
       end
       connection = Minitest::Mock.new

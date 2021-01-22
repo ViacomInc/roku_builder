@@ -10,7 +10,7 @@
     "message": "Found DoesExist check. Try using invalid check on dot reference"
   },
   {
-    "regex": "[^\\s]+\\[\"[^\"]+\"\\]",
+    "regex": "\\w+\\[\"[^\"]+\"\\]",
     "severity": "warning",
     "message": "Found AA String reference. Try switching to dot reference"
   },

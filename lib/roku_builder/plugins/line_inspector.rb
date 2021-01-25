@@ -41,18 +41,26 @@ module RokuBuilder
         no_comments = file_no_comments.join("")
         file = full_file.join("")
         @inspector_config.each do |line_inspector|
-          to_check = no_comments
-          to_check = file if line_inspector[:include_comments]
-          match  = nil
-          if line_inspector[:case_sensitive]
-            match = /#{line_inspector[:regex]}/.match(to_check)
-          else
-            match = /#{line_inspector[:regex]}/i.match(to_check)
-          end
-          if match
-            line_number = to_check[0..match.begin(0)].split("\n", -1).count - 1
-            unless lines_to_ignore.include?(line_number)
-              add_warning(inspector: line_inspector, file: file_path, line: line_number, match: match)
+          unless line_inspector[:disabled]
+            to_check = no_comments
+            to_check = file if line_inspector[:include_comments]
+            match  = nil
+            start = 0
+            loop do
+              if line_inspector[:case_sensitive]
+                match = /#{line_inspector[:regex]}/.match(to_check, start)
+              else
+                match = /#{line_inspector[:regex]}/i.match(to_check, start)
+              end
+              if match
+                start = match.end(0)
+                line_number = to_check[0..match.begin(0)].split("\n", -1).count - 1
+                unless lines_to_ignore.include?(line_number)
+                  add_warning(inspector: line_inspector, file: file_path, line: line_number, match: match)
+                end
+              else
+                break
+              end
             end
           end
         end

@@ -77,7 +77,24 @@ module RokuBuilder
     end
 
     def open_logger(port)
-      @logger.debug "Opened Logging Port"
+      @logger.debug "Opening Logging Port"
+      @io_logger = TCPSocket.open(@roku_ip_address, port)
+      @io_logger_thread = Thread.new(@io_logger, @logger) { |socket,logger|
+        text = ""
+        loop do
+          begin
+            value = socket.recv_nonblock(1)
+            if value.ord == 10
+              logger.unknown text
+              text = ""
+            else
+              text += value
+            end
+          rescue IO::WaitReadable
+            #Do Nothing
+          end
+        end
+      }
     end
   end
 
@@ -212,7 +229,6 @@ module RokuBuilder
 
     def check_value(value, length)
       unless value.length == length
-        shutdown()
         raise IOError, "Unexpected EOF reading debug stream"
       end
     end

@@ -25,23 +25,24 @@ module RokuBuilder
       options[:remoteDebug] = true
       loader.sideload(options: options)
       begin
-        socket = RokuDebugSocket.open(@roku_ip_address, 8081, @logger)
-        @logger.unknown "Started Connection"
-        socket.do_handshake
         @stopped = false
-        @sent_continue = false
+        initial_continue = false
+        @queue = Queue.new
+        start_socket_monitor
+        start_input_monitor
         loop do
-          begin
-            response = socket.get_response
-            if response[:request_id]
-              process_response(response)
-            end
-          rescue IO::WaitReadable
-            #Do nothing
+          event = @queue.pop
+          case event[:type]
+          when :logging
+            @logger.unknown event[:value]
+          when :socket
+            process_response event[:value]
+          when :input
+            process_command event[:value]
           end
-          if @stopped and not @sent_continue
-            @sent_continue = true
-            socket.send_command(:continue)
+          if @stopped and not initial_continue
+            initial_continue = true
+            @socket.send_command(:continue)
           end
         end
       rescue IOError => e
@@ -53,6 +54,41 @@ module RokuBuilder
       end
     end
 
+    def start_socket_monitor
+      @logger.debug "Monitoring Socket"
+      @socket = RokuDebugSocket.open(@roku_ip_address, 8081, @logger)
+      @logger.unknown "Started Connection"
+      @socket.do_handshake
+      socket_thread = Thread.new(@socket, @queue) { |socket,queue|
+        loop do
+          begin
+            response = socket.get_response
+            if response[:request_id]
+              queue.push({
+                type: :socket,
+                value: response
+              })
+            end
+          rescue IO::WaitReadable
+            #Do nothing
+          end
+        end
+      }
+    end
+
+    def start_input_monitor
+      @logger.debug "Monitoring User Input"
+      input_thread = Thread.new(@queue) { |queue|
+        loop do
+          command = gets
+          queue.push({
+            type: :input,
+            value: command.downcase.chomp
+          })
+        end
+      }
+    end
+
     def process_response(response)
       if response[:request_id] == 0
         case response[:update_type]
@@ -60,7 +96,6 @@ module RokuBuilder
           open_logger(response[:data])
         when 2
           @stopped  = true
-          @sent_continue = false
           @logger.debug "All Threads Stopped"
           @logger.debug " --- reason: #{response[:data][:stop_reason]}"
           @logger.debug " --- detail: #{response[:data][:stop_reason_detail]}"
@@ -78,25 +113,42 @@ module RokuBuilder
 
     def open_logger(port)
       @logger.debug "Opening Logging Port"
-      @io_logger = TCPSocket.open(@roku_ip_address, port)
-      @io_logger_thread = Thread.new(@io_logger, @logger) { |socket,logger|
+      io_logger = TCPSocket.open(@roku_ip_address, port)
+      io_logger_thread = Thread.new(io_logger, @queue) { |socket,queue|
         text = ""
         loop do
           begin
             value = socket.recv_nonblock(1)
             if value.ord == 10
-              logger.unknown text
+              queue.push({
+                type: :logging,
+                value: text
+              })
               text = ""
             else
               text += value
             end
           rescue IO::WaitReadable
-            #Do Nothing
+            #Do nothing
           end
         end
       }
     end
+
+    def process_command(command)
+      case command
+      when "s", "stop"
+        @logger.debug "Sending Stop"
+        @socket.send_command(:stop)
+      when "c", "continue"
+        @logger.debug "Sending Continue"
+        @socket.send_command(:continue)
+      else
+        @logger.warn "Unknown Command: '#{command}'"
+      end
+    end
   end
+
 
   RokuBuilder.register_plugin(Debugger)
 
@@ -151,6 +203,7 @@ module RokuBuilder
     def send_command(command)
       @logger.debug "Sending Command: #{command}"
       commands = {
+        stop: 1,
         continue: 2
       }
       size = get_size(command)
@@ -169,6 +222,7 @@ module RokuBuilder
 
     def get_size(command)
       command_size = {
+        stop: 12,
         continue: 12
       }
       return command_size[command]

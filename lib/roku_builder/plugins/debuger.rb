@@ -27,6 +27,7 @@ module RokuBuilder
       begin
         @stopped = false
         initial_continue = false
+        @lock = Mutex.new
         @queue = Queue.new
         start_socket_monitor
         start_input_monitor
@@ -42,7 +43,9 @@ module RokuBuilder
           end
           if @stopped and not initial_continue
             initial_continue = true
-            @socket.send_command(:continue)
+            @lock.synchronize do
+              @socket.send_command(:continue)
+            end
           end
         end
       rescue IOError => e
@@ -62,7 +65,10 @@ module RokuBuilder
       socket_thread = Thread.new(@socket, @queue) { |socket,queue|
         loop do
           begin
-            response = socket.get_response
+            response = nil
+            @lock.synchronize do
+              response = socket.get_response
+            end
             if response[:request_id]
               queue.push({
                 type: :socket,
@@ -108,6 +114,17 @@ module RokuBuilder
         @logger.debug "Command Response"
         @logger.debug " --- command: #{response[:command]}"
         @logger.debug " --- error_code: #{response[:error_code]}"
+        process_command_response(response)
+      end
+    end
+
+    def process_command_response(response)
+      case response[:command]
+      when :threads
+        @threads = response[:data][:threads]
+        @threads.each_with_index do |thread, idx|
+          @logger.unknown "Thread #{idx}: #{thread[:file_path]}"
+        end
       end
     end
 
@@ -139,10 +156,31 @@ module RokuBuilder
       case command
       when "s", "stop"
         @logger.debug "Sending Stop"
-        @socket.send_command(:stop)
+        @lock.synchronize do
+          @socket.send_command(:stop)
+        end
       when "c", "continue"
         @logger.debug "Sending Continue"
-        @socket.send_command(:continue)
+        @threads = nil
+        @lock.synchronize do
+          @socket.send_command(:continue)
+        end
+      when "t", "threads"
+        if @stopped
+          @logger.debug "Sending Threads"
+          @lock.synchronize do
+            @socket.send_command(:threads)
+          end
+        else
+          @logger.warn "Must be stopped to use that command"
+        end
+      when /thread (\d+)/
+        thread = @threads[$1.to_i]
+        if @threads and thread
+           @logger.unknown "Thread #{$1}:\nFunction: #{thread[:function_name]}\nFile Path: #{thread[:file_path]}\nLine Number: #{thread[:line_number]}"
+        else
+          @logger.error "Unknown Thread #{$1}"
+        end
       else
         @logger.warn "Unknown Command: '#{command}'"
       end
@@ -204,7 +242,8 @@ module RokuBuilder
       @logger.debug "Sending Command: #{command}"
       commands = {
         stop: 1,
-        continue: 2
+        continue: 2,
+        threads: 3
       }
       size = get_size(command)
       send_uint32(size)
@@ -223,15 +262,36 @@ module RokuBuilder
     def get_size(command)
       command_size = {
         stop: 12,
-        continue: 12
+        continue: 12,
+        threads: 12
       }
       return command_size[command]
     end
 
     def get_data(command)
       case command
+      when :stop
+        return nil
       when :continue
         return nil
+      when :threads
+        data = {
+          count: read_uint32,
+          threads: []
+        }
+        data[:count].times do
+          thread = {
+            flags: read_uint8,
+            stop_reason: read_uint32,
+            stop_reason_detail: read_utf8z,
+            line_number: read_uint32,
+            function_name: read_utf8z,
+            file_path: read_utf8z,
+            code_snippet: read_utf8z
+          }
+          data[:threads].push(thread)
+        end
+        return data
       end
     end
 

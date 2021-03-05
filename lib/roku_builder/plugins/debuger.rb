@@ -125,6 +125,13 @@ module RokuBuilder
         @threads.each_with_index do |thread, idx|
           @logger.unknown "Thread #{idx}: #{thread[:file_path]}"
         end
+      when :stacktrace
+        stack = response[:data][:stack]
+        log = "Thread Stack Trace:"
+        stack.each do |stack_entry|
+          log += "\n#{stack_entry[:function_name]}: #{stack_entry[:file_path]}(#{stack_entry[:line_number]})"
+        end
+        @logger.unknown log
       end
     end
 
@@ -178,6 +185,15 @@ module RokuBuilder
         thread = @threads[$1.to_i]
         if @threads and thread
            @logger.unknown "Thread #{$1}:\nFunction: #{thread[:function_name]}\nFile Path: #{thread[:file_path]}\nLine Number: #{thread[:line_number]}"
+        else
+          @logger.error "Unknown Thread #{$1}"
+        end
+      when /stacktrace (\d+)/
+        thread = @threads[$1.to_i]
+        if @threads and thread
+          @lock.synchronize do
+            @socket.send_command(:stacktrace, {thread_index: $1.to_i})
+          end
         else
           @logger.error "Unknown Thread #{$1}"
         end
@@ -238,17 +254,19 @@ module RokuBuilder
       response
     end
 
-    def send_command(command)
+    def send_command(command, params = nil)
       @logger.debug "Sending Command: #{command}"
       commands = {
         stop: 1,
         continue: 2,
-        threads: 3
+        threads: 3,
+        stacktrace: 4
       }
       size = get_size(command)
       send_uint32(size)
       send_uint32(@request_id)
       send_uint32(commands[command])
+      send_params(command, params) if params
       @active_requests[@request_id.to_s] = command
       @request_id += 1
     end
@@ -263,9 +281,21 @@ module RokuBuilder
       command_size = {
         stop: 12,
         continue: 12,
-        threads: 12
+        threads: 12,
+        stacktrace: 16
       }
       return command_size[command]
+    end
+
+    def send_params(command, params)
+      case command
+      when :stacktrace
+        if params[:thread_index]
+          send_uint32(params[:thread_index])
+        else
+          raise IOError, "Missing Param for 'stasktrace' command"
+        end
+      end
     end
 
     def get_data(command)
@@ -290,6 +320,20 @@ module RokuBuilder
             code_snippet: read_utf8z
           }
           data[:threads].push(thread)
+        end
+        return data
+      when :stacktrace
+        data = {
+          count: read_uint32,
+          stack: []
+        }
+        data[:count].times do
+          stack_entry = {
+            line_number: read_uint32,
+            function_name: read_utf8z,
+            file_name: read_utf8z
+          }
+          data[:stack].push(stack_entry)
         end
         return data
       end

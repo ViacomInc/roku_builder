@@ -61,22 +61,15 @@ module RokuBuilder
       out[:file] ||= "key_"+dev_id+".pkg"
       @config.out = out
 
-      Dir.mktmpdir { |dir|
-        config_copy = @config.dup
-        config_copy.root_dir = dir
-        Manifest.generate({config: config_copy, attributes: {}})
-        Dir.mkdir(File.join(dir, "source"))
-        File.open(File.join(dir, "source", "main.brs"), "w") do |io|
-          io.puts "sub main()"
-          io.puts "  print \"Load\""
-          io.puts "end sub"
-        end
-        loader = Loader.new(config: config_copy)
-        options[:current] = true
-        loader.sideload(options: options)
-        sign_package(app_name_version: "key_"+dev_id, password: password, stage: options[:stage])
-        @logger.unknown("Keyed PKG: #{File.join(@config.out[:folder], @config.out[:file])}")
-      }
+      config_copy = @config.dup
+      config_copy.root_dir = ""
+      config_copy.in[:folder] = File.dirname(__FILE__)
+      config_copy.in[:file] = "key_template.zip"
+      loader = Loader.new(config: config_copy)
+      options[:in] = true
+      loader.sideload(options: options)
+      sign_package(app_name_version: "key_"+dev_id, password: password, stage: options[:stage])
+      @logger.unknown("Keyed PKG: #{File.join(@config.out[:folder], @config.out[:file])}")
     end
 
     # Sets the key on the roku device

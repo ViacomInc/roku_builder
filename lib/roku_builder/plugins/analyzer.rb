@@ -21,6 +21,9 @@ module RokuBuilder
       parser.on("--inclide-libraries", "Include libraries in analyze") do
         options[:include_libraries] = true
       end
+      parser.on("--sca-precommand COMMAND", "Include libraries in analyze") do |command|
+        options[:sca_precommand] = command
+      end
     end
 
     def self.dependencies
@@ -65,7 +68,7 @@ module RokuBuilder
       else
         command = File.join(File.dirname(__FILE__), "sca-cmd", "bin", "sca-cmd.bat")
       end
-      results = `#{command} #{path}`.split("\n")
+      results = `#{@options[:sca_precommand]} #{command} #{path}`.split("\n")
       process_sca_results(results, ssai)
     end
 

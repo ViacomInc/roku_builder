@@ -64,7 +64,7 @@ module RokuBuilder
 
     def run_sca_tool(path:, ssai:)
       if OS.unix?
-         command = File.join(File.dirname(__FILE__), "sca-cmd", "bin", "export JAVA_HOME='JDK 11'; sca-cmd")
+         command = "export JAVA_HOME='JDK 11'; " + File.join(File.dirname(__FILE__), "sca-cmd", "bin", "sca-cmd")
       else
         command = File.join(File.dirname(__FILE__), "sca-cmd", "bin", "sca-cmd.bat")
       end

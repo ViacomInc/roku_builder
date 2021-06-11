@@ -64,11 +64,12 @@ module RokuBuilder
 
     def run_sca_tool(path:, ssai:)
       if OS.unix?
-         command = File.join(File.dirname(__FILE__), "sca-cmd", "bin", "sca-cmd")
+         command = File.join(File.dirname(__FILE__), "sca-cmd", "bin", "export JAVA_HOME='JDK 11'; sca-cmd")
       else
         command = File.join(File.dirname(__FILE__), "sca-cmd", "bin", "sca-cmd.bat")
       end
-      results = `#{@options[:sca_precommand]} #{command} #{path}`.split("\n")
+      @logger.debug("Command: '#{command}'")
+      results = `#{command} #{path}`.split("\n")
       process_sca_results(results, ssai)
     end
 

@@ -96,6 +96,11 @@ module RokuBuilder
         if ssai and /SetAdUrl\(\) method is missing/.match(@sca_warning[:message])
           return false
         end
+        libraries = @config.project[:libraries]
+        libraries ||= []
+        if libraries.any_is_start?(@sca_warning[:path].gsub(/pkg:/, "")) and not @options[:include_libraries]
+          return false
+        end
         return true
       end
       return false

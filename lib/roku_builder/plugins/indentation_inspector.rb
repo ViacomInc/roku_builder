@@ -55,6 +55,8 @@ module RokuBuilder
               end
             elsif @prev_line =~ /^\s*\bfor\b|^\s*\bwhile\b/i
               @ind += @count
+            elsif @prev_line =~ /^\s*\btry\b|^\s*\bcatch\b/i
+              @ind += @count
             end
           end
           if line =~ /^\'/ or line =~ /\'indent-ignore/
@@ -62,10 +64,12 @@ module RokuBuilder
           elsif line =~ /^\s*[\}\]\)]/
             @ind -= @count
           elsif line =~ /^\s*\bfunction\b|^\s*\bsub\b/i
-            @ind -= 0
+            # Don't change indentation
           elsif line =~ /^\s*:?\s*#?end\b|^\s*#?endif\b|^\s*endfor\b|^\s*\bnext\b/i
             @ind -= @count
           elsif line =~ /^\s*#?else\b|^\s*elseif\b/i
+            @ind -= @count
+          elsif line =~ /^\s*#?catch\b/i
             @ind -= @count
           end
         end

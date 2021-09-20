@@ -98,7 +98,7 @@ module RokuBuilder
         end
         libraries = @config.project[:libraries]
         libraries ||= []
-        if libraries.any_is_start?(@sca_warning[:path].gsub(/pkg:/, "")) and not @options[:include_libraries]
+        if @sca_warning[:path] and libraries.any_is_start?(@sca_warning[:path].gsub(/pkg:/, "")) and not @options[:include_libraries]
           return false
         end
         return true

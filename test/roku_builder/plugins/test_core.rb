@@ -123,9 +123,9 @@ module RokuBuilder
     def test_core_get_plugin_by_name
       parser = OptionParser.new
       options = {}
-      plugin_name = Core.get_plugin_by_name("loader")
-      assert plugin_name
-      assert_match "RokuBuilder::Loader", plugin_name.to_s
+      plugin_name = Core.get_plugin_by_name("core")
+      refute_nil plugin_name
+      assert_match "RokuBuilder::Core", plugin_name.to_s
     end
   end
 end

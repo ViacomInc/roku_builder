@@ -23,6 +23,10 @@ sub main(externalParams)
   scene.observeField("exitApplication", port)
   scene.observeField("sessionLength", port)
 
+  scene.signalBeacon("AppLaunchComplete")
+  scene.signalBeacon("AppDialogInitiate")
+  scene.signalBeacon("AppDialogComplete")
+
   while(true)
     msg = wait(0, port)
     msgType = type(msg)

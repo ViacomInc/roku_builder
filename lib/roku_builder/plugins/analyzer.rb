@@ -65,11 +65,13 @@ module RokuBuilder
     def run_sca_tool(path:, ssai:)
       if OS.unix?
         command = File.join(File.dirname(__FILE__), "sca-cmd", "bin", "sca-cmd")
+        stderr = "/dev/null"
       else
         command = File.join(File.dirname(__FILE__), "sca-cmd", "bin", "sca-cmd.bat")
+        stderr = "nul"
       end
       @logger.debug("Command: '#{command}'")
-      results = `#{command} #{path}`.split("\n")
+      results = `#{command} #{path} 2>#{stderr}`.split("\n")
       process_sca_results(results, ssai)
     end
 

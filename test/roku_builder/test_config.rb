@@ -163,6 +163,37 @@ module RokuBuilder
       assert_equal `pwd`.chomp, config.raw[:projects][:p2][:directory]
     end
 
+    def test_config_read_local_sub_config
+      options = build_options({config: File.join(test_files_path(ConfigTest), "config.json"), validate: true})
+      config = Config.new(options: options)
+
+      mock = Minitest::Mock.new
+      io = proc { |path|
+        if path == './.roku_config.json' or path == "keys.json"
+          mock
+        else
+          IO.new(IO.sysopen(path))
+        end
+      }
+      local_config_content = IO.read(File.join(test_files_path(ConfigTest), "local.json"))
+      mock.expect(:read, local_config_content)
+      local_sub_config_content = IO.read(File.join(test_files_path(ConfigTest), "local_sub.json"))
+      mock.expect(:read, local_sub_config_content)
+
+      File.stub(:exist?, true) do
+        File.stub(:open, io) do
+          Dir.stub(:glob, ["keys.json"]) do
+            config.load
+          end
+        end
+      end
+
+      mock.verify
+      refute_nil config.raw[:keys]
+      refute_nil config.raw[:keys][:test_key]
+      assert_equal "password", config.raw[:keys][:test_key][:password]
+    end
+
     def test_config_edit
       orginal = File.join(test_files_path(ConfigTest), "config.json")
       tmp = File.join(test_files_path(ConfigTest), "tmpconfig.json")

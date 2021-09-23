@@ -1,0 +1,8 @@
+{
+  "keys": {
+    "test_key": {
+      "keyed_pkg": "/key/path",
+      "password": "password"
+    }
+  }
+}

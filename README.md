@@ -1,7 +1,7 @@
 # RokuBuilder
 
 [![Gem Version](https://badge.fury.io/rb/roku_builder.svg)](https://badge.fury.io/rb/roku_builder)
-[![Build Status](https://travis-ci.org/ViacomInc/roku_builder.svg?branch=master)](https://travis-ci.org/ViacomInc/roku_builder)
+<!-- [![Build Status](https://travis-ci.org/ViacomInc/roku_builder.svg?branch=master)](https://travis-ci.org/ViacomInc/roku_builder) -->
 [![Coverage Status](https://coveralls.io/repos/github/ViacomInc/roku_builder/badge.svg?branch=master)](https://coveralls.io/github/ViacomInc/roku_builder?branch=master)
 [![Code Climate](https://codeclimate.com/github/ViacomInc/roku_builder/badges/gpa.svg)](https://codeclimate.com/github/ViacomInc/roku_builder)
 

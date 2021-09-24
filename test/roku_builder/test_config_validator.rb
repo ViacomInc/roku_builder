@@ -167,13 +167,6 @@ module RokuBuilder
       assert_equal [15, -1], validator.instance_variable_get(:@codes)
     end
 
-    def test_config_manager_validate_project_key
-      config = good_config
-      config[:projects][:project2][:stages][:production][:key] = "b"
-      validator = ConfigValidator.new(config: config)
-      assert_equal [22], validator.instance_variable_get(:@codes)
-    end
-
     def test_config_manager_validate_keys_pkg
       config = good_config
       config[:keys][:a][:keyed_pkg] = nil

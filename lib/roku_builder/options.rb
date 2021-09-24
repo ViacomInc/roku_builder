@@ -31,6 +31,10 @@ module RokuBuilder
       device_commands.include?(command)
     end
 
+    def keyed_command?
+      keyed_commands.include?(command)
+    end
+
     def has_source?
       !(keys & sources).empty?
     end
@@ -41,7 +45,7 @@ module RokuBuilder
       RokuBuilder.plugins.each do |plugin|
         plugin.commands.each do |command, attributes|
           commands << command
-          [:device, :source, :exclude].each do |type|
+          [:device, :source, :exclude, :keyed].each do |type|
             if attributes[type]
               send("#{type}_commands".to_sym) << command
             end
@@ -147,6 +151,12 @@ module RokuBuilder
     # @return [Array<Symbol>] List of commands that require a device
     def device_commands
       @device_commands ||= []
+    end
+
+    # List of commands that require a key
+    # @return [Array<Symbol>] List of commands that require a key
+    def keyed_commands
+      @keyed_commands ||= []
     end
   end
 end

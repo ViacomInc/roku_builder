@@ -8,7 +8,7 @@ module RokuBuilder
     def self.commands
       {
         configure: {},
-        validate: {},
+        validate: {keyed: true},
         increment: {source: true, stage: true},
         dostage: {source: true},
         dounstage: {source: true}

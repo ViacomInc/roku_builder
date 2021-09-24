@@ -26,7 +26,7 @@ module RokuBuilder
     KEY_MISSING_PATH          = 19
     KEY_MISSING_PASSWORD      = 20
     INVALID_MAPPING_INFO      = 21
-    MISSING_KEY               = 22
+    #                         = 22
     MISSING_STAGE_METHOD      = 23
 
     def initialize(config:)
@@ -153,7 +153,6 @@ module RokuBuilder
       errors= [
         [STAGE_MISSING_BRANCH, (!stage[:branch] and project[:stage_method] == :git)],
         [STAGE_MISSING_SCRIPT, (!stage[:script] and project[:stage_method] == :script)],
-        [MISSING_KEY, (!!stage[:key] and stage[:key].class == String and (!@config[:keys] or !@config[:keys][stage[:key].to_sym]))]
       ]
       process_errors(errors: errors)
     end

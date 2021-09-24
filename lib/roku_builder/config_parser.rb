@@ -169,10 +169,12 @@ module RokuBuilder
     end
 
     def setup_key_config
-      if @parsed[:stage]
-        @parsed[:key] = @parsed[:stage][:key]
-        get_global_key_config if @parsed[:key].class == String
-        test_key_file
+      if @options.keyed_command?
+        if @parsed[:stage]
+          @parsed[:key] = @parsed[:stage][:key]
+          get_global_key_config if @parsed[:key].class == String
+          test_key_file
+        end
       end
     end
 

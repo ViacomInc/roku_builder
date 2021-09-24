@@ -50,7 +50,7 @@ module RokuBuilder
             elsif @prev_line =~ /^\s*\bfunction\b|^\s*\bsub\b/i
               @ind += @count
             elsif @prev_line =~ /^\s*#?if\b|^\s*#?else\b/i
-              unless @prev_line =~ /\bthen\b[ \t ]*[^' \r\n']+.*$/i or @prev_line =~ /\breturn\b/i
+              unless @prev_line =~ /\bthen\b[ \t]*[^' \r\n]+.*$/i or @prev_line =~ /\breturn\b/i
                 @ind += @count
               end
             elsif @prev_line =~ /^\s*\bfor\b|^\s*\bwhile\b/i

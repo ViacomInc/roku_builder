@@ -14,7 +14,7 @@ module RokuBuilder
     end
 
     def check_line(line:, number:, comment:)
-      #byebug if number == 10 and @path.ends_with?(".brs")
+      #byebug if number == 190 and @path.ends_with?("ScreenManager.brs")
       set_indentation(line: line)
       regexp = /^#{@character}{#{@ind}}[^#{@character}]/
       unless line =~ regexp or line == "\n" or line =~ /\'indent-ignore/ or comment
@@ -46,6 +46,8 @@ module RokuBuilder
             elsif @prev_line =~ /[\{\[\(:]$/
               @ind += @count
             elsif @prev_line =~ /:\s*\bfunction\b|:\s*\bsub\b/i
+              @ind += @count
+            elsif @prev_line =~ /=\s*\bfunction\b|=\s*\bsub\b/i
               @ind += @count
             elsif @prev_line =~ /^\s*\bfunction\b|^\s*\bsub\b/i
               @ind += @count

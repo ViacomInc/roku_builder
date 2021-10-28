@@ -179,6 +179,7 @@ module RokuBuilder
     end
 
     def get_global_key_config
+      raise ParseError, "No Keys Configured" unless @config[:keys]
       raise ParseError, "Unknown Key: #{@parsed[:key]}" unless @config[:keys][@parsed[:key].to_sym]
       @parsed[:key] = @config[:keys][@parsed[:key].to_sym].dup
       if @config[:keys][:key_dir]  and !@parsed[:key][:keyed_pkg].start_with?("./")

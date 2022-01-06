@@ -2,5 +2,5 @@
 
 module RokuBuilder
   # Version of the RokuBuilder Gem
-  VERSION = "5.0.0"
+  VERSION = "4.24.0"
 end

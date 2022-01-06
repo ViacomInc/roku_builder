@@ -138,8 +138,8 @@ module RokuBuilder
       lines = get_command_response(command: "sgnodes all", start_reg: start_reg, end_reg: end_reg)
       xml_string = lines.join("\n")
       stats = {"Total" => {count: 0}}
-      doc = Oga.parse_xml(xml_string)
-      handle_node(stats: stats, node: doc.children.first)
+      doc = Nokogiri::XML(xml_string)
+      handle_node(stats: stats, node: doc.root)
       stats
     end
 
@@ -171,8 +171,7 @@ module RokuBuilder
 
     def handle_node(stats:,  node:)
       if node
-        node.children.each do |element|
-          next unless element.class == Oga::XML::Element
+        node.element_children.each do |element|
           attributes = element.attributes.map{|attr| {"#{attr.name}": attr.value}}.reduce({}, :merge)
           stats[element.name] ||= {count: 0, ids: []}
           stats[element.name][:count] += 1

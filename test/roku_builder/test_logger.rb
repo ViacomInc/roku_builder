@@ -42,7 +42,7 @@ module RokuBuilder
     def test_logger_testing
       Logger.set_testing
       logger = Logger.instance
-      assert_equal "/dev/null", logger.instance_variable_get(:@logdev).instance_variable_get(:@filename)
+      assert_nil logger.instance_variable_get(:@logdev).instance_variable_get(:@filename)
     end
   end
 end

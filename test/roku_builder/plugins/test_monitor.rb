@@ -138,7 +138,7 @@ module RokuBuilder
       all_text = "midline "
       txt = "split\nBrightScript Debugger> "
 
-      result = @monitor.send(:manage_text, {all_text: all_text, txt: txt})
+      result = @monitor.send(:manage_text, all_text: all_text, txt: txt)
 
       assert_equal "", result
 
@@ -148,7 +148,7 @@ module RokuBuilder
 
     def test_monitor_manage_text_connection_used
       assert_raises ExecutionError do
-        @monitor.send(:manage_text, {all_text: "", txt: "Console connection is already in use."})
+        @monitor.send(:manage_text, all_text: "", txt: "Console connection is already in use.")
       end
     end
   end

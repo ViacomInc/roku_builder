@@ -67,7 +67,7 @@ module RokuBuilder
       tester = Tester.new(config: config)
 
       text = "this\nis\na\ntest\nparagraph"
-      tester.send(:handle_text, {txt: text})
+      tester.send(:handle_text, txt: text)
 
       refute tester.instance_variable_get(:@in_tests)
     end
@@ -79,7 +79,7 @@ module RokuBuilder
 
       text = ["this","is","a","test","paragraph"]
 
-      tester.send(:handle_text, {txt: text.join("\n")})
+      tester.send(:handle_text, txt: text.join("\n"))
       assert_equal text, tester.instance_variable_get(:@logs)
       assert tester.instance_variable_get(:@in_tests)
     end
@@ -91,7 +91,7 @@ module RokuBuilder
       text = ["this","*Start testing*","is","a","test","*End testing*","paragraph"]
       verify_text = ["***************","***************","*Start testing*","is","a","test","*End testing*","*************","*************"]
 
-      tester.send(:handle_text, {txt: text.join("\n")})
+      tester.send(:handle_text, txt: text.join("\n"))
       refute tester.instance_variable_get(:@in_tests)
       assert_equal verify_text, tester.instance_variable_get(:@logs)
     end
@@ -103,7 +103,7 @@ module RokuBuilder
       text = ["connection already in use"]
 
       assert_raises IOError do
-        tester.send(:handle_text, {txt: text.join("\n")})
+        tester.send(:handle_text, txt: text.join("\n"))
       end
     end
   end

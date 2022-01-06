@@ -26,7 +26,7 @@ module RokuBuilder
       parse_stub = lambda{ count+= 1; {validate: true} }
       options = Options.allocate
       options.stub(:parse, parse_stub) do
-        options.send(:initialize, {options: {validate: true}})
+        options.send(:initialize, options: {validate: true})
       end
       assert_equal 0, count
     end
@@ -133,7 +133,7 @@ module RokuBuilder
       options = Options.allocate
       options.stub(:source_command?, true) do
         assert_raises InvalidOptions do
-          options.send(:initialize, {options: {validate: true}})
+          options.send(:initialize, options: {validate: true})
           options.validate
         end
       end
@@ -164,7 +164,7 @@ module RokuBuilder
       logger.expect(:warn, nil, ["Depricated"])
       Logger.class_variable_set(:@@instance, logger)
       options.stub(:depricated_options, {validate: "Depricated"}) do
-        options.send(:initialize, {options: {validate: true}})
+        options.send(:initialize, options: {validate: true})
         options.validate
       end
       logger.verify

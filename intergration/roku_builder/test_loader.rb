@@ -15,9 +15,9 @@ module RokuBuilder
       cleanup_uuid_script
     end
     def test_sideload
-      output = `#{roku} --sideload --stage production`
+      output = `#{roku} --sideload --stage production -V`
       assert_log @uuid
-      refute_match(/WARN: Missing File/, output)
+      refute_match(/INFO: Missing File/, output)
     end
     def test_delete
       `#{roku} --sideload --working`

@@ -48,7 +48,6 @@ module RokuBuilder
 
     # Sideload an app onto a roku device
     def sideload(options:)
-      delete(options: options, ignoreFailure: true)
       did_build = false
       unless options[:in]
         did_build = true
@@ -173,7 +172,7 @@ module RokuBuilder
                 @logger.warn "Ignored file with invalid Roku filetype " + File.basename(diskFilePath)
               end
             else
-              @logger.warn "Missing File: #{diskFilePath}"
+              @logger.info "Missing File: #{diskFilePath}"
             end
           end
         end

@@ -17,8 +17,8 @@ module RokuBuilder
     def test_package
       target = File.join(testfiles_path(PackagerIntergrationTest), "pkg.pkg")
       FileUtils.rm(target) if File.exist?(target)
-      output = `#{roku} --package --stage production --out #{target}`
-      refute_match(/WARN: Missing File/, output)
+      output = `#{roku} --package --stage production --out #{target} -V`
+      refute_match(/INFO: Missing File/, output)
       wait_assert {File.exist?(target)}
       refute File.exist?(target+".zip")
       FileUtils.rm(target) if File.exist?(target)
@@ -27,7 +27,7 @@ module RokuBuilder
       target = File.join(testfiles_path(PackagerIntergrationTest), "pkg.pkg")
       FileUtils.rm(target) if File.exist?(target)
       output = `#{roku} --package --stage production --out #{target} -V`
-      refute_match(/WARN: Missing File/, output)
+      refute_match(/INFO: Missing File/, output)
       assert_match(/#{target}/, output)
       wait_assert {File.exist?(target)}
       refute File.exist?(target+".zip")

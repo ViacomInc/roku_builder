@@ -40,6 +40,9 @@ module RokuBuilder
       parser.on("--remote-debug", "Sideload will enable remote debug") do
         options[:remoteDebug] = true
       end
+      parser.on("--build-dir DIR", "The directory to load files from when building the app") do |dir|
+        options[:build_dir] = dir
+      end
     end
 
     def self.dependencies
@@ -141,7 +144,7 @@ module RokuBuilder
       path = file_path(:out)
       File.delete(path) if File.exist?(path)
       io = Zip::File.open(path, Zip::File::CREATE)
-      writeEntries(@config.parsed[:root_dir], content[:source_files], "", content[:excludes], io)
+      writeEntries(build_dir, content[:source_files], "", content[:excludes], io)
       io.close()
     end
 
@@ -186,6 +189,11 @@ module RokuBuilder
           @logger.warn "Missing Entry: #{entity}"
         end
       end
+    end
+    def build_dir
+      dir = @options[:build_dir]
+      dir ||= @config.parsed[:root_dir]
+      dir
     end
   end
   RokuBuilder.register_plugin(Loader)

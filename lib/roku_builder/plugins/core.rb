@@ -82,6 +82,9 @@ module RokuBuilder
         puts help_text
         exit
       end
+      parser.on("--generate-fig-autocomplete", "Generates a fig auto-compleation file") do
+        exit
+      end
       parser.on("-v", "--version", "Show version") do
         puts RokuBuilder::VERSION
         exit

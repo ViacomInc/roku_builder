@@ -47,7 +47,8 @@ module RokuBuilder
           file = file_path.dup; file.slice!(dir)
           unless libraries.any_is_start?(file) and not @options[:include_libraries]
             if File.file?(file_path) and file_path.end_with?(".brs", ".xml")
-              line_inspector_config = performance_config
+              line_inspector_config = []
+              line_inspector_config = performance_config unless linter_config[:skip_performance]
               line_inspector_config += linter_config[:rules] if linter_config[:rules]
               line_inspector = LineInspector.new(inspector_config: line_inspector_config, indent_config: linter_config[:indentation])
               @warnings.concat(line_inspector.run(file_path))

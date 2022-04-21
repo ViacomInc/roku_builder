@@ -67,7 +67,7 @@ goto fail
 :execute
 @rem Setup the command line
 
-set CLASSPATH=%APP_HOME%\lib\sca-cmd.jar;%APP_HOME%\lib\sca-library.jar;%APP_HOME%\lib\utils-1.1.0.jar;%APP_HOME%\lib\commons-cli-1.5.0.jar;%APP_HOME%\lib\jackson-databind-2.13.0.jar;%APP_HOME%\lib\jackson-core-2.13.0.jar;%APP_HOME%\lib\jackson-annotations-2.13.0.jar;%APP_HOME%\lib\jackson-dataformat-xml-2.13.0.jar;%APP_HOME%\lib\commons-lang3-3.12.0.jar;%APP_HOME%\lib\commons-io-2.11.0.jar;%APP_HOME%\lib\commons-compress-1.21.jar;%APP_HOME%\lib\woodstox-core-6.2.6.jar;%APP_HOME%\lib\stax2-api-4.2.1.jar
+set CLASSPATH=%APP_HOME%\lib\sca-cmd.jar;%APP_HOME%\lib\sca-library.jar;%APP_HOME%\lib\utils-2.3.0.jar;%APP_HOME%\lib\configuration-2.0.0.jar;%APP_HOME%\lib\compress-2.3.1.jar;%APP_HOME%\lib\io-2.4.0.jar;%APP_HOME%\lib\imaging-2.0.0.jar;%APP_HOME%\lib\manifest-2.3.0.jar;%APP_HOME%\lib\commons-cli-1.5.0.jar;%APP_HOME%\lib\jackson-databind-2.13.1.jar;%APP_HOME%\lib\jackson-core-2.13.1.jar;%APP_HOME%\lib\jackson-annotations-2.13.1.jar;%APP_HOME%\lib\jackson-dataformat-xml-2.13.1.jar;%APP_HOME%\lib\commons-lang3-3.12.0.jar;%APP_HOME%\lib\woodstox-core-6.2.7.jar;%APP_HOME%\lib\stax2-api-4.2.1.jar;%APP_HOME%\lib\commons-compress-1.21.jar;%APP_HOME%\lib\commons-io-2.11.0.jar
 
 
 @rem Execute sca-cmd

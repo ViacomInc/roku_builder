@@ -41,16 +41,6 @@ module RokuBuilder
       assert_equal Array, warnings.class
       assert_equal 0, warnings.count
     end
-    def test_performance_function_return_types
-      warnings = test_file(text: "function test() as String\n? \"test\"\nend function")
-      assert_equal 1, warnings.count
-      assert_match(/function return/, warnings[0][:message])
-    end
-    def test_performance_function_return_types_lowercase
-      warnings = test_file(text: "function test() as string\n? \"test\"\nend function")
-      assert_equal 1, warnings.count
-      assert_match(/function return/, warnings[0][:message])
-    end
     def test_performance_aa_does_exist
       warnings = test_file(text: "exists = aa.doesExist(\"test\")")
       assert_equal 1, warnings.count

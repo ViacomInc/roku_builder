@@ -41,7 +41,7 @@ module RokuBuilder
           @ind = line.index(/[^#{@character}]/)
         else
           if @prev_line
-            if @prev_line =~ /^\'/ or @prev_line =~ /\'indent-ignore/
+            if @prev_line =~ /^\s*\'/ or @prev_line =~ /\'indent-ignore/
               # Don't change indentation
             elsif @prev_line =~ /[\{\[\(:]$/
               @ind += @count
@@ -61,7 +61,7 @@ module RokuBuilder
               @ind += @count
             end
           end
-          if line =~ /^\'/ or line =~ /\'indent-ignore/
+          if line =~ /^\s*\'/ or line =~ /\'indent-ignore/
             # Don't change indentation
           elsif line =~ /^\s*[\}\]\)]/
             @ind -= @count

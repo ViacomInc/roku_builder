@@ -1,0 +1,142 @@
+# ********** Copyright Viacom, Inc. Apache 2.0 **********
+
+require_relative "test_helper.rb"
+
+module RokuBuilder
+  class DeviceManagerTest < Minitest::Test
+    def setup
+      Logger.set_testing
+      @ping = Minitest::Mock.new
+      ["roku", "test2"].each do |device|
+        path = File.join(Dir.tmpdir, device)
+        File.delete(path) if File.exist?(path)
+      end
+    end
+
+    def teardown
+      @ping.verify
+      ["roku", "test2"].each do |device|
+        path = File.join(Dir.tmpdir, device)
+        File.delete(path) if File.exist?(path)
+      end
+    end
+
+    def test_device_manager_init
+      config, options = build_config_options_objects(DeviceManagerTest)
+      manager = DeviceManager.new(config: config, options: options)
+      assert_equal config, manager.instance_variable_get(:@config)
+      assert_equal options, manager.instance_variable_get(:@options)
+    end
+
+    def test_device_manager_reserve_device
+      Net::Ping::External.stub(:new, @ping) do
+        config, options = build_config_options_objects(DeviceManagerTest)
+        @ping.expect(:ping?, true, [config.raw[:devices][:roku][:ip], 1, 0.2, 1])
+        manager = DeviceManager.new(config: config, options: options)
+        device = manager.reserve_device
+        assert_kind_of Device, device
+        assert_equal "roku", device.name
+      end
+    end
+
+    def test_device_manager_reserve_device_default_offline
+      Net::Ping::External.stub(:new, @ping) do
+        config, options = build_config_options_objects(DeviceManagerTest)
+        @ping.expect(:ping?, false, [config.raw[:devices][:roku][:ip], 1, 0.2, 1])
+        manager = DeviceManager.new(config: config, options: options)
+        assert_raises(DeviceError) do
+          device = manager.reserve_device
+        end
+      end
+    end
+
+    def test_device_manager_reserve_device_all_used
+      Net::Ping::External.stub(:new, @ping) do
+        config, options = build_config_options_objects(DeviceManagerTest)
+        @ping.expect(:ping?, true, [config.raw[:devices][:roku][:ip], 1, 0.2, 1])
+        @ping.expect(:ping?, true, [config.raw[:devices][:roku][:ip], 1, 0.2, 1])
+        manager = DeviceManager.new(config: config, options: options)
+        device1 = manager.reserve_device
+        assert_raises(DeviceError) do
+          device2 = manager.reserve_device
+        end
+      end
+    end
+
+    def test_device_manager_release_device
+      Net::Ping::External.stub(:new, @ping) do
+        config, options = build_config_options_objects(DeviceManagerTest)
+        @ping.expect(:ping?, true, [config.raw[:devices][:roku][:ip], 1, 0.2, 1])
+        @ping.expect(:ping?, true, [config.raw[:devices][:roku][:ip], 1, 0.2, 1])
+        manager = DeviceManager.new(config: config, options: options)
+        device1 = manager.reserve_device
+        manager.release_device(device1)
+        device2 = manager.reserve_device
+        assert_equal "roku", device2.name
+      end
+    end
+
+    def test_device_manager_reserve_device_2_devices
+      Net::Ping::External.stub(:new, @ping) do
+        options = {validate: true}
+        config = good_config(DeviceManagerTest)
+        config[:devices][:test2] = {
+          ip: "192.168.0.101",
+          user: "user",
+          password: "password"
+        }
+        config, options = build_config_options_objects(DeviceManagerTest, options, true, config)
+        @ping.expect(:ping?, true, [config.raw[:devices][:roku][:ip], 1, 0.2, 1])
+        @ping.expect(:ping?, true, [config.raw[:devices][:roku][:ip], 1, 0.2, 1])
+        @ping.expect(:ping?, true, [config.raw[:devices][:test2][:ip], 1, 0.2, 1])
+        manager = DeviceManager.new(config: config, options: options)
+        device1 = manager.reserve_device
+        device2 = manager.reserve_device
+        assert_equal "roku", device1.name
+        assert_equal "test2", device2.name
+      end
+    end
+
+    def test_device_manager_reserve_device_2_devices_default_missing
+      Net::Ping::External.stub(:new, @ping) do
+        options = {validate: true}
+        config = good_config(DeviceManagerTest)
+        config[:devices][:test2] = {
+          ip: "192.168.0.101",
+          user: "user",
+          password: "password"
+        }
+        config, options = build_config_options_objects(DeviceManagerTest, options, true, config)
+        @ping.expect(:ping?, false, [config.raw[:devices][:roku][:ip], 1, 0.2, 1])
+        @ping.expect(:ping?, true, [config.raw[:devices][:test2][:ip], 1, 0.2, 1])
+        @ping.expect(:ping?, false, [config.raw[:devices][:roku][:ip], 1, 0.2, 1])
+        @ping.expect(:ping?, true, [config.raw[:devices][:test2][:ip], 1, 0.2, 1])
+        manager = DeviceManager.new(config: config, options: options)
+        device1 = manager.reserve_device
+        assert_raises(DeviceError) do
+          device2 = manager.reserve_device
+        end
+        assert_equal "test2", device1.name
+      end
+    end
+
+    def test_device_manager_reserve_device_specified
+      Net::Ping::External.stub(:new, @ping) do
+        options = {validate: true, device: "test2", device_given: true}
+        config = good_config(DeviceManagerTest)
+        config[:devices][:test2] = {
+          ip: "192.168.0.101",
+          user: "user",
+          password: "password"
+        }
+        config, options = build_config_options_objects(DeviceManagerTest, options, true, config)
+        @ping.expect(:ping?, true, [config.raw[:devices][:test2][:ip], 1, 0.2, 1])
+        manager = DeviceManager.new(config: config, options: options)
+        device = manager.reserve_device
+        assert_kind_of Device, device
+        assert_equal "test2", device.name
+      end
+    end
+  end
+end
+

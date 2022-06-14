@@ -319,7 +319,9 @@ module RokuBuilder
       profiler = Profiler.new(config: config)
       RokuBuilder.stub(:device_manager, @device_manager) do
         Net::Telnet.stub(:new, connection) do
-          profiler.devlog(options: options)
+          profiler.stub(:print, nil) do
+            profiler.devlog(options: options)
+          end
         end
       end
       connection.verify
@@ -364,7 +366,9 @@ module RokuBuilder
           connection.stub(:puts, puts_stub) do
             txt = ">>thread node calls: create     0 + op    24  @ 100.0% rendezvous"
             connection.stub(:waitfor, waitfor, txt) do
-              profiler.sgperf(options: options)
+              profiler.stub(:print, nil) do
+                profiler.sgperf(options: options)
+              end
             end
           end
         end
@@ -429,7 +433,9 @@ module RokuBuilder
           connection.stub(:puts, connection_puts) do
             profiler.stub(:get_command_response, command_response) do
               profiler.stub(:puts, profiler_puts) do
-                profiler.sgperf(options: options)
+                profiler.stub(:print, nil) do
+                  profiler.sgperf(options: options)
+                end
               end
             end
           end

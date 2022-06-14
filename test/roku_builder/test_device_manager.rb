@@ -129,7 +129,7 @@ module RokuBuilder
 
     def test_device_manager_reserve_device_specified
       Net::Ping::External.stub(:new, @ping) do
-        options = {validate: true, device: "test2", device_given: true}
+        options = {validate: true, device: "test2"}
         config = good_config(DeviceManagerTest)
         config[:devices][:test2] = {
           ip: "192.168.0.101",

@@ -35,7 +35,6 @@ module RokuBuilder
       assert_equal "out", options[:out]
       assert_equal "in", options[:in]
       assert_equal "device", options[:device]
-      assert options[:device_given]
       assert options[:verbose]
       assert options[:debug]
     end
@@ -56,7 +55,6 @@ module RokuBuilder
       assert_equal "out", options[:out]
       assert_equal "in", options[:in]
       assert_equal "device", options[:device]
-      assert options[:device_given]
       assert options[:verbose]
     end
     def test_core_configure

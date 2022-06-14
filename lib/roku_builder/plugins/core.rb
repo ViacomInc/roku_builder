@@ -67,7 +67,6 @@ module RokuBuilder
       end
       parser.on("-D", "--device ID", "Use a different device corresponding to the given ID") do |d|
         options[:device] = d
-        options[:device_given] = true
       end
       parser.on("-V", "--verbose", "Print Info message") do
         options[:verbose] = true

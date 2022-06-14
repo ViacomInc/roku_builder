@@ -11,7 +11,7 @@ module RokuBuilder
 
     def reserve_device(no_lock: false)
       message = "No Devices Found"
-      if @options[:device_given]
+      if @options[:device]
         device = Device.new(@options[:device], @config.raw[:devices][@options[:device].to_sym])
         return device if device_avaiable!(device: device, no_lock: no_lock)
         message = "Device #{@options[:device]} not found"

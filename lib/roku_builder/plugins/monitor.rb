@@ -32,26 +32,28 @@ module RokuBuilder
 
     # Monitor a development log on the Roku device
     def monitor(options:)
-      type = options[:monitor].to_sym
-      telnet_config = { 'Host' => @roku_ip_address, 'Port' => @ports[type] }
-      waitfor_config = { 'Match' => /./, 'Timeout' => false }
+      get_device(no_lock: true) do |device|
+        type = options[:monitor].to_sym
+        telnet_config = { 'Host' => device.ip, 'Port' => @ports[type] }
+        waitfor_config = { 'Match' => /./, 'Timeout' => false }
 
-      thread = Thread.new(telnet_config, waitfor_config) {|telnet,waitfor|
-        @logger.info "Monitoring #{type} console(#{telnet['Port']}) on #{telnet['Host'] }"
-        connection = Net::Telnet.new(telnet)
-        Thread.current[:connection] = connection
-        all_text = ""
-        while true
-          connection.waitfor(waitfor) do |txt|
-            all_text = manage_text(all_text: all_text, txt: txt, regexp: options[:regexp])
+        thread = Thread.new(telnet_config, waitfor_config) {|telnet,waitfor|
+          @logger.info "Monitoring #{type} console(#{telnet['Port']}) on #{telnet['Host'] }"
+          connection = Net::Telnet.new(telnet)
+          Thread.current[:connection] = connection
+          all_text = ""
+          while true
+            connection.waitfor(waitfor) do |txt|
+              all_text = manage_text(all_text: all_text, txt: txt, regexp: options[:regexp])
+            end
           end
-        end
-      }
-      thread.abort_on_exception = true
+        }
+        thread.abort_on_exception = true
 
-      init_readline()
+        init_readline()
 
-      run_prompt(thread: thread)
+        run_prompt(thread: thread)
+      end
     end
 
     private

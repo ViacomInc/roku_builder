@@ -36,19 +36,21 @@ module RokuBuilder
 
     def package(options:)
       check_options(options)
-      #sideload
-      loader = Loader.new(config: @config)
-      loader.sideload(options: options)
-      loader.squash(options: options) if @config.stage[:squash]
-      #rekey
-      key(options: options)
-      #package
-      sign_package(app_name_version: "", password: @config.key[:password], stage: options[:stage])
-      #inspect
-      if options[:inspect_package]
-        @config.in = @config.out
-        options[:password] = @config.key[:password]
-        Inspector.new(config: @config).inspect(options: options)
+      get_device do |device|
+        #sideload
+        loader = Loader.new(config: @config)
+        loader.sideload(options: options, device: device)
+        loader.squash(options: options, device: device) if @config.stage[:squash]
+        #rekey
+        key(options: options, device: device)
+        #package
+        sign_package(app_name_version: "", password: @config.key[:password], stage: options[:stage], device: device)
+        #inspect
+        if options[:inspect_package]
+          @config.in = @config.out
+          options[:password] = @config.key[:password]
+          Inspector.new(config: @config).inspect(options: options, device: device)
+        end
       end
     end
 
@@ -76,31 +78,37 @@ module RokuBuilder
     # @param keyed_pkg [String] Path for a package signed with the desired key
     # @param password [String] Password for the package
     # @return [Boolean] True if key changed, false otherwise
-    def key(options:)
-      oldId = dev_id
+    def key(options:, device: nil)
+      get_device(device: device) do |device|
+        oldId = dev_id(device: device)
 
-      raise ExecutionError, "Missing Key Config" unless @config.key
+        raise ExecutionError, "Missing Key Config" unless @config.key
 
-      # upload new key with password
-      payload =  {
-        mysubmit: "Rekey",
-        passwd: @config.key[:password],
-        archive: Faraday::UploadIO.new(@config.key[:keyed_pkg], 'application/octet-stream')
-      }
-      multipart_connection.post "/plugin_inspect", payload
+        # upload new key with password
+        payload =  {
+          mysubmit: "Rekey",
+          passwd: @config.key[:password],
+          archive: Faraday::UploadIO.new(@config.key[:keyed_pkg], 'application/octet-stream')
+        }
+        multipart_connection(device: device) do |conn|
+          conn.post "/plugin_inspect", payload
+        end
 
-      # check key
-      newId = dev_id
-      @logger.info("Key did not change") unless newId != oldId
-      @logger.debug(oldId + " -> " + newId)
+        # check key
+        newId = dev_id(device: device)
+        @logger.info("Key did not change") unless newId != oldId
+        @logger.debug(oldId + " -> " + newId)
+      end
     end
 
     # Get the current dev id
     # @return [String] The current dev id
-    def dev_id
+    def dev_id(device: nil)
       path = "/plugin_package"
-      conn = simple_connection
-      response = conn.get path
+      response = nil
+      simple_connection(device: device) do |conn|
+        response = conn.get path
+      end
 
       dev_id = /Your Dev ID:\s*<font[^>]*>([^<]*)<\/font>/.match(response.body)
       dev_id ||= /Your Dev ID:[^>]*<\/label> ([^<]*)/.match(response.body)
@@ -118,79 +126,88 @@ module RokuBuilder
     end
 
     # Sign and download the currently sideloaded app
-    def sign_package(app_name_version:, password:, stage: nil)
-      payload =  {
-        mysubmit: "Package",
-        app_name: app_name_version,
-        passwd: password,
-        pkg_time: Time.now.to_i
-      }
-      response = multipart_connection.post "/plugin_package", payload
-
-      # Check for error
-      failed = /(Failed: [^\.]*\.)/.match(response.body)
-      raise ExecutionError, failed[1] if failed
-
-      # Download signed package
-      pkg = /<a href="pkgs[^>]*>([^<]*)</.match(response.body)[1]
-      path = "/pkgs/#{pkg}"
-      conn = Faraday.new(url: @url) do |f|
-        f.request :digest, @dev_username, @dev_password
-        f.adapter Faraday.default_adapter
-      end
-      response = conn.get path
-      raise ExecutionError, "Failed to download signed package" if response.status != 200
-      out_file = nil
-      unless @config.out[:file]
-        out = @config.out
-        build_version = Manifest.new(config: @config).build_version
-        if stage
-          out[:file] = "#{@config.project[:app_name]}_#{stage}_#{build_version}"
-        else
-          out[:file] = "#{@config.project[:app_name]}_working_#{build_version}"
+    def sign_package(app_name_version:, password:, stage: nil, device: nil)
+      get_device(device: device) do |device|
+        payload =  {
+          mysubmit: "Package",
+          app_name: app_name_version,
+          passwd: password,
+          pkg_time: Time.now.to_i
+        }
+        response = nil
+        multipart_connection(device: device) do |conn|
+          response = conn.post "/plugin_package", payload
         end
-        @config.out = out
-      end
-      out_file = File.join(@config.out[:folder], @config.out[:file])
-      out_file = out_file+".pkg" unless out_file.end_with?(".pkg")
-      File.open(out_file, 'w+b') {|fp| fp.write(response.body)}
-      if File.exist?(out_file)
-        pkg_size = File.size(out_file).to_f / 2**20
-        raise ExecutionError, "PKG file size is too large (#{pkg_size.round(2)} MB): #{out_file}" if pkg_size > 4.0
-        @logger.info("Outfile: #{out_file}")
-      else
-        @logger.warn("Outfile Missing: #{out_file}")
+
+        # Check for error
+        failed = /(Failed: [^\.]*\.)/.match(response.body)
+        raise ExecutionError, failed[1] if failed
+
+        # Download signed package
+        pkg = /<a href="pkgs[^>]*>([^<]*)</.match(response.body)[1]
+        path = "/pkgs/#{pkg}"
+        conn = Faraday.new(url: "http://#{device.ip}") do |f|
+          f.request :digest, device.user, device.password
+          f.adapter Faraday.default_adapter
+        end
+        response = conn.get path
+        raise ExecutionError, "Failed to download signed package" if response.status != 200
+        out_file = nil
+        unless @config.out[:file]
+          out = @config.out
+          build_version = Manifest.new(config: @config).build_version
+          if stage
+            out[:file] = "#{@config.project[:app_name]}_#{stage}_#{build_version}"
+          else
+            out[:file] = "#{@config.project[:app_name]}_working_#{build_version}"
+          end
+          @config.out = out
+        end
+        out_file = File.join(@config.out[:folder], @config.out[:file])
+        out_file = out_file+".pkg" unless out_file.end_with?(".pkg")
+        File.open(out_file, 'w+b') {|fp| fp.write(response.body)}
+        if File.exist?(out_file)
+          pkg_size = File.size(out_file).to_f / 2**20
+          raise ExecutionError, "PKG file size is too large (#{pkg_size.round(2)} MB): #{out_file}" if pkg_size > 4.0
+          @logger.info("Outfile: #{out_file}")
+        else
+          @logger.warn("Outfile Missing: #{out_file}")
+        end
       end
     end
 
     # Uses the device to generate a new signing key
     #  @return [Array<String>] Password and dev_id for the new key
-    def generate_new_key()
-      telnet_config = {
-        'Host' => @roku_ip_address,
-        'Port' => 8080
-      }
-      connection = Net::Telnet.new(telnet_config)
-      connection.puts("genkey")
-      waitfor_config = {
-        'Match' => /./,
-        'Timeout' => false
-      }
+    def generate_new_key(device: nil)
       password = nil
       dev_id = nil
-      while password.nil? or dev_id.nil?
-        connection.waitfor(waitfor_config) do |txt|
-          while line = txt.slice!(/^.*\n/) do
-            words = line.split
-            if words[0] == "Password:"
-              password = words[1]
-            elsif words[0] == "DevID:"
-              dev_id = words[1]
+      get_device(device: device) do |device|
+        telnet_config = {
+          'Host' => device.ip,
+          'Port' => 8080
+        }
+        connection = Net::Telnet.new(telnet_config)
+        connection.puts("genkey")
+        waitfor_config = {
+          'Match' => /./,
+          'Timeout' => false
+        }
+        password = nil
+        dev_id = nil
+        while password.nil? or dev_id.nil?
+          connection.waitfor(waitfor_config) do |txt|
+            while line = txt.slice!(/^.*\n/) do
+              words = line.split
+              if words[0] == "Password:"
+                password = words[1]
+              elsif words[0] == "DevID:"
+                dev_id = words[1]
+              end
             end
           end
         end
+        connection.close
       end
-      connection.close
       return password, dev_id
     end
   end

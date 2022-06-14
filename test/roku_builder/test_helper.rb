@@ -28,6 +28,12 @@ def register_plugins(plugin_class)
     end
   end
 end
+def clean_device_locks(names=["roku"])
+  names.each do |device|
+    path = File.join(Dir.tmpdir, device)
+    File.delete(path) if File.exist?(path)
+  end
+end
 def build_config_options_objects(klass, options = {validate: true}, empty_plugins = true, config_hash = nil)
   options = build_options(options, empty_plugins)
   config = RokuBuilder::Config.new(options: options)

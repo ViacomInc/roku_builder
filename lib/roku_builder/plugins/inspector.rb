@@ -33,13 +33,15 @@ module RokuBuilder
       pkg = pkg+".pkg" unless pkg.end_with?(".pkg")
       # upload new key with password
       path = "/plugin_inspect"
-      conn = multipart_connection
-      payload =  {
-        mysubmit: "Inspect",
-        passwd: options[:password],
-        archive: Faraday::UploadIO.new(pkg, 'application/octet-stream')
-      }
-      response = conn.post path, payload
+      response = nil
+      multipart_connection do |conn|
+        payload =  {
+          mysubmit: "Inspect",
+          passwd: options[:password],
+          archive: Faraday::UploadIO.new(pkg, 'application/octet-stream')
+        }
+        response = conn.post path, payload
+      end
 
       app_name = /App Name:\s*<\/td>\s*<td>\s*<font[^>]*>([^<]*)<\/font>\s*<\/td>/.match(response.body)
       dev_id = nil
@@ -75,30 +77,38 @@ module RokuBuilder
     # Capture a screencapture for the currently sideloaded app
     # @return [Boolean] Success
     def screencapture(options:)
-      out = @config.out
-      payload =  {
-        mysubmit: "Screenshot",
-        passwd: @dev_password,
-        archive: Faraday::UploadIO.new(File::NULL, 'application/octet-stream')
-      }
-      response = multipart_connection.post "/plugin_inspect", payload
+      get_device do |device|
+        out = @config.out
+        payload =  {
+          mysubmit: "Screenshot",
+          passwd: @dev_password,
+          archive: Faraday::UploadIO.new(File::NULL, 'application/octet-stream')
+        }
+        response = nil
+        multipart_connection(device: device) do |conn|
+          response = conn.post "/plugin_inspect", payload
+        end
 
-      path = /<img src="([^"]*)">/.match(response.body)
-      raise ExecutionError, "Failed to capture screen" unless path
-      path = path[1]
+        path = /<img src="([^"]*)">/.match(response.body)
+        raise ExecutionError, "Failed to capture screen" unless path
+        path = path[1]
 
-      unless out[:file]
-        out[:file] = /time=([^"]*)">/.match(response.body)
-        out_ext = /dev.([^"]*)\?/.match(response.body)
-        out[:file] = "dev_#{out[:file][1]}.#{out_ext[1]}" if out[:file]
+        unless out[:file]
+          out[:file] = /time=([^"]*)">/.match(response.body)
+          out_ext = /dev.([^"]*)\?/.match(response.body)
+          out[:file] = "dev_#{out[:file][1]}.#{out_ext[1]}" if out[:file]
+        end
+
+        response = nil
+        simple_connection(device: device) do |conn|
+          response = conn.get path
+        end
+
+        File.open(File.join(out[:folder], out[:file]), "wb") do |io|
+          io.write(response.body)
+        end
+        @logger.info "Screen captured to #{File.join(out[:folder], out[:file])}"
       end
-
-      response = simple_connection.get path
-
-      File.open(File.join(out[:folder], out[:file]), "wb") do |io|
-        io.write(response.body)
-      end
-      @logger.info "Screen captured to #{File.join(out[:folder], out[:file])}"
     end
   end
   RokuBuilder.register_plugin(Inspector)

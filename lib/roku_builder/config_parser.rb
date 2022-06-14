@@ -21,7 +21,7 @@ module RokuBuilder
 
     def parse_config
       process_in_argument
-      setup_device
+      setup_devices
       setup_project
       setup_in_out_file
       setup_project_config
@@ -35,10 +35,9 @@ module RokuBuilder
       @options[:in] = File.expand_path(@options[:in]) if @options[:in]
     end
 
-    def setup_device
-      @options[:device] = @config[:devices][:default] unless @options[:device]
-      @parsed[:device_config] = @config[:devices][@options[:device].to_sym]
-      raise ArgumentError, "Unknown device: #{@options[:device]}" unless @parsed[:device_config]
+    def setup_devices
+      @parsed[:device_default] = @config[:devices][:default]
+      @parsed[:devices] = @config[:devices].select{|key, value| :default != key}
     end
 
     def setup_project

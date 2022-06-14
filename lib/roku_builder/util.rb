@@ -11,10 +11,6 @@ module RokuBuilder
     def initialize(config: )
       @logger = Logger.instance
       @config = config
-      @roku_ip_address = @config.device_config[:ip]
-      @dev_username = @config.device_config[:user]
-      @dev_password = @config.device_config[:password]
-      @url = "http://#{@roku_ip_address}"
       init
     end
 
@@ -27,25 +23,48 @@ module RokuBuilder
 
     # Generates a simpe Faraday connection with digest credentials
     # @return [Faraday] The faraday connection
-    def simple_connection
-      Faraday.new(url: @url) do |f|
-        f.request :digest, @dev_username, @dev_password
-        f.adapter Faraday.default_adapter
+    def simple_connection(device: nil, no_lock: false, &block)
+      raise ImplementationError, "No block given to simple_connection" unless block_given?
+      get_device(device: device, no_lock: no_lock) do |device|
+        url = "http://#{device.ip}"
+        connection = Faraday.new(url: url) do |f|
+          f.request :digest, device.user, device.password
+          f.adapter Faraday.default_adapter
+        end
+        block.call(connection)
       end
     end
 
     # Generates a multipart Faraday connection with digest credentials
     # @param port [Integer] optional port to connect to
     # @return [Faraday] The faraday connection
-    def multipart_connection(port: nil)
-      url = @url
-      url = "#{url}:#{port}" if port
-      Faraday.new(url: url) do |f|
-        f.headers['Content-Type'] = Faraday::Request::Multipart.mime_type
-        f.request :digest, @dev_username, @dev_password
-        f.request :multipart
-        f.request :url_encoded
-        f.adapter Faraday.default_adapter
+    def multipart_connection(port: nil, device: nil, no_lock: false, &block)
+      raise ImplementationError, "No block given to multipart_connection" unless block_given?
+      get_device(device: device, no_lock: no_lock) do |device|
+        url = "http://#{device.ip}"
+        url += ":#{port}" if port
+        connection = Faraday.new(url: url) do |f|
+          f.headers['Content-Type'] = Faraday::Request::Multipart.mime_type
+          f.request :digest, device.user, device.password
+          f.request :multipart
+          f.request :url_encoded
+          f.adapter Faraday.default_adapter
+        end
+        block.call(connection)
+      end
+    end
+
+    def get_device(device: nil, no_lock: false, &block)
+      raise ImplementationError, "No block given to get_device" unless block_given?
+      device_given = true
+      unless device
+        device_given = false
+        device = RokuBuilder.device_manager.reserve_device(no_lock: no_lock)
+      end
+      begin
+        block.call(device)
+      ensure
+        RokuBuilder.device_manager.release_device(device) unless device_given
       end
     end
   end

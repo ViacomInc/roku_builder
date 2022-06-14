@@ -65,7 +65,7 @@ module RokuBuilder
       RokuBuilder.class_variable_set(:@@plugins, [])
       RokuBuilder.setup_plugins
       register_plugins(Packager)
-      assert_raises DeviceError do
+      assert_raises InvalidOptions do
         RokuBuilder.run(options: {package: true, in: "/in/path", debug: true, config: config})
       end
     end
@@ -79,47 +79,6 @@ module RokuBuilder
       logger.verify
       Logger.set_testing
     end
-    def test_roku_builder_check_devices_good
-      Net::Ping::External.stub(:new, @ping) do
-        @ping.expect(:ping?, true, [@parsed[:device_config][:ip], 1, 0.2, 1])
-        RokuBuilder.check_devices
-      end
-    end
-    def test_roku_builder_check_devices_no_devices
-      Net::Ping::External.stub(:new, @ping) do
-        @ping.expect(:ping?, false, [@parsed[:device_config][:ip], 1, 0.2, 1])
-        @ping.expect(:ping?, false, [@raw[:devices][:a][:ip], 1, 0.2, 1])
-        @ping.expect(:ping?, false, [@raw[:devices][:b][:ip], 1, 0.2, 1])
-        assert_raises DeviceError do
-          RokuBuilder.check_devices
-        end
-      end
-    end
-    def test_roku_builder_check_devices_changed_device
-      Net::Ping::External.stub(:new, @ping) do
-        @ping.expect(:ping?, false, [@parsed[:device_config][:ip], 1, 0.2, 1])
-        @ping.expect(:ping?, true, [@raw[:devices][:a][:ip], 1, 0.2, 1])
-        RokuBuilder.check_devices
-        assert_equal @raw[:devices][:a][:ip], @config.parsed[:device_config][:ip]
-      end
-    end
-    def test_roku_builder_check_devices_bad_device
-      Net::Ping::External.stub(:new, @ping) do
-        @options[:device_given] = true
-        @ping.expect(:ping?, false, [@parsed[:device_config][:ip], 1, 0.2, 1])
-        assert_raises DeviceError do
-          RokuBuilder.check_devices
-        end
-      end
-    end
-    def test_roku_builder_check_devices
-      Net::Ping::External.stub(:new, @ping) do
-        @options = build_options({validate: true, device_given: false, working: true})
-        RokuBuilder.class_variable_set(:@@options, @options)
-        RokuBuilder.check_devices
-      end
-    end
-
     def test_roku_builder_logger_debug
       tests = [
         {options: {debug: true}, method: :set_debug},
@@ -153,6 +112,10 @@ module RokuBuilder
       refute_nil options[:d]
       assert_equal "b:c", options[:a]
       assert_equal "e:f", options[:d]
+    end
+    def test_roku_builder_device_manager
+      manager = RokuBuilder.device_manager
+      assert_kind_of DeviceManager, manager
     end
     def test_roku_builder_plugins_empty
       RokuBuilder.class_variable_set(:@@plugins, nil)

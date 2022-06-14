@@ -70,48 +70,54 @@ module RokuBuilder
     # Send a navigation command to the roku device
     # @param command [Symbol] The smbol of the command to send
     # @return [Boolean] Success
-    def nav(options:)
-      commands = options[:nav].split(/, */).map{|c| c.to_sym}
-      commands.each do |command|
-        unless @commands.has_key?(command)
-          raise ExecutionError, "Unknown Navigation Command"
+    def nav(options:, device: nil)
+      get_device(device: device, no_lock: true) do |device|
+        commands = options[:nav].split(/, */).map{|c| c.to_sym}
+        commands.each do |command|
+          unless @commands.has_key?(command)
+            raise ExecutionError, "Unknown Navigation Command"
+          end
+          multipart_connection(port: 8060, device: device) do |conn|
+            path = "/keypress/#{@commands[command]}"
+            @logger.debug("Send Command: "+path)
+            response = conn.post path
+            raise ExecutionError, "Navigation Failed" unless response.success?
+          end
         end
-        conn = multipart_connection(port: 8060)
-        path = "/keypress/#{@commands[command]}"
-        @logger.debug("Send Command: "+path)
-        response = conn.post path
-        raise ExecutionError, "Navigation Failed" unless response.success?
       end
     end
 
     # Type text on the roku device
     # @param text [String] The text to type on the device
     # @return [Boolean] Success
-    def type(options:)
-      conn = multipart_connection(port: 8060)
-      options[:type].split(//).each do |c|
-        path = "/keypress/LIT_#{CGI::escape(c)}"
-        @logger.debug("Send Letter: "+path)
-        response = conn.post path
-        return false unless response.success?
+    def type(options:, device: nil)
+      multipart_connection(port: 8060, device: device, no_lock: true) do |conn|
+        options[:type].split(//).each do |c|
+          path = "/keypress/LIT_#{CGI::escape(c)}"
+          @logger.debug("Send Letter: "+path)
+          response = conn.post path
+          return false unless response.success?
+        end
+        return true
       end
-      return true
     end
 
     def navigate(options:)
-      running = true
-      @logger.info("Key Mappings:")
-      @mappings.each_value {|key|
-        @logger.info(sprintf("%13s -> %s", key[1], @commands[key[0].to_sym]))
-      }
-      @logger.info(sprintf("%13s -> %s", "Ctrl + c", "Exit"))
-      while running
-        char = read_char
-        @logger.debug("Char: #{char.inspect}")
-        if char == "\u0003"
-          running = false
-        else
-          Thread.new(char) {|character| handle_navigate_input(character)}
+      get_device(no_lock: true) do |device|
+        running = true
+        @logger.info("Key Mappings:")
+        @mappings.each_value {|key|
+          @logger.info(sprintf("%13s -> %s", key[1], @commands[key[0].to_sym]))
+        }
+        @logger.info(sprintf("%13s -> %s", "Ctrl + c", "Exit"))
+        while running
+          char = read_char
+          @logger.debug("Char: #{char.inspect}")
+          if char == "\u0003"
+            running = false
+          else
+            Thread.new(char, device) {|character,device| handle_navigate_input(character, device)}
+          end
         end
       end
     end
@@ -208,11 +214,11 @@ module RokuBuilder
       end
     end
 
-    def handle_navigate_input(char)
+    def handle_navigate_input(char, device)
       if @mappings[char.to_sym] != nil
-        nav(options: {nav: @mappings[char.to_sym][0]})
+        nav(options: {nav: @mappings[char.to_sym][0]}, device: device)
       elsif char.inspect.force_encoding("UTF-8").ascii_only?
-        type(options: {type: char})
+        type(options: {type: char}, device: device)
       end
     end
 

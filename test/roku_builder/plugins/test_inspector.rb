@@ -32,6 +32,7 @@ module RokuBuilder
       assert options[:screencapture]
     end
     def test_inspector_inspect
+
       logger = Minitest::Mock.new()
 
       logger.expect(:formatter=, nil, [Proc])
@@ -77,9 +78,19 @@ module RokuBuilder
       options = {inspect: true, in: File.join(test_files_path(InspectorTest), "test.pkg"), password: "password"}
       config, options = build_config_options_objects(InspectorTest, options, false)
       inspector = Inspector.new(config: config)
-      ::Logger.stub(:new, logger) do
-        inspector.inspect(options: options)
+
+      device_manager = Minitest::Mock.new
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      device_manager.expect(:release_device, nil, [device])
+
+      RokuBuilder.stub(:device_manager, device_manager) do
+        ::Logger.stub(:new, logger) do
+          inspector.inspect(options: options)
+        end
       end
+      logger.verify
+      device_manager.verify
     end
     def test_inspector_inspect_old_interface
       logger = Minitest::Mock.new()
@@ -119,9 +130,20 @@ module RokuBuilder
       options = {inspect: true, in: File.join(test_files_path(InspectorTest), "test.pkg"), password: "password"}
       config, options = build_config_options_objects(InspectorTest, options, false)
       inspector = Inspector.new(config: config)
-      ::Logger.stub(:new, logger) do
-        inspector.inspect(options: options)
+
+      device_manager = Minitest::Mock.new
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      device_manager.expect(:release_device, nil, [device])
+
+      RokuBuilder.stub(:device_manager, device_manager) do
+        ::Logger.stub(:new, logger) do
+          inspector.inspect(options: options)
+        end
       end
+
+      logger.verify
+      device_manager.verify
     end
 
     def test_screencapture
@@ -139,9 +161,19 @@ module RokuBuilder
       options = {screencapture: true }
       config, options = build_config_options_objects(InspectorTest, options, false)
       inspector = Inspector.new(config: config)
-      File.stub(:open, nil, io) do
-        inspector.screencapture(options: options)
+
+      device_manager = Minitest::Mock.new
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      device_manager.expect(:release_device, nil, [device])
+
+      RokuBuilder.stub(:device_manager, device_manager) do
+        File.stub(:open, nil, io) do
+          inspector.screencapture(options: options)
+        end
       end
+      io.verify
+      device_manager.verify
     end
     def test_screencapture_png
       body = "<hr /><img src=\"pkgs/dev.png?time=1455629573\">"
@@ -158,8 +190,16 @@ module RokuBuilder
       options = {screencapture: true }
       config, options = build_config_options_objects(InspectorTest, options, false)
       inspector = Inspector.new(config: config)
-      File.stub(:open, nil, io) do
-        inspector.screencapture(options: options)
+
+      device_manager = Minitest::Mock.new
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      device_manager.expect(:release_device, nil, [device])
+
+      RokuBuilder.stub(:device_manager, device_manager) do
+        File.stub(:open, nil, io) do
+          inspector.screencapture(options: options)
+        end
       end
     end
   end

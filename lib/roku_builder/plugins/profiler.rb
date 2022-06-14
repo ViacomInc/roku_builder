@@ -62,10 +62,13 @@ module RokuBuilder
     end
 
     def sgperf(options:)
-      telnet_config ={
-        'Host' => @roku_ip_address,
-        'Port' => 8080
-      }
+      telnet_config = nil
+      get_device(no_lock: true) do |device|
+        telnet_config ={
+          'Host' => device.ip,
+          'Port' => 8080
+        }
+      end
       @connection = Net::Telnet.new(telnet_config)
       @connection.puts("sgperf clear\n")
       @connection.puts("sgperf start\n")
@@ -97,10 +100,13 @@ module RokuBuilder
     end
 
     def devlog(options:)
-      telnet_config ={
-        'Host' => @roku_ip_address,
-        'Port' => 8080
-      }
+      telnet_config = nil
+      get_device(no_lock: true) do |device|
+        telnet_config ={
+          'Host' => device.ip,
+          'Port' => 8080
+        }
+      end
       connection = Net::Telnet.new(telnet_config)
       connection.puts("enhanced_dev_log #{options[:devlog]} #{options[:devlog_function]}\n")
     end
@@ -259,10 +265,13 @@ module RokuBuilder
         'Timeout' => 1
       }
       unless @connection
-        telnet_config ={
-          'Host' => @roku_ip_address,
-          'Port' => 8080
-        }
+        telnet_config = nil
+        get_device(no_lock: true) do |device|
+          telnet_config ={
+            'Host' => device.ip,
+            'Port' => 8080
+          }
+        end
         @connection = Net::Telnet.new(telnet_config)
       end
 

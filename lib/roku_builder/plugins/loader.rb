@@ -50,14 +50,14 @@ module RokuBuilder
     end
 
     # Sideload an app onto a roku device
-    def sideload(options:)
+    def sideload(options:, device: nil)
       did_build = false
       unless options[:in]
         did_build = true
         build(options: options)
       end
       keep_build_file = is_build_command(options) and options[:out]
-      upload(options)
+      upload(options: options, device: device)
       # Cleanup
       File.delete(file_path(:in)) if did_build and not keep_build_file
     end
@@ -77,7 +77,10 @@ module RokuBuilder
     # Remove the currently sideloaded app
     def delete(options:, ignoreFailure: false)
       payload =  {mysubmit: "Delete", archive: ""}
-      response  = multipart_connection.post "/plugin_install", payload
+      response = nil
+      multipart_connection do |conn|
+        response = conn.post "/plugin_install", payload
+      end
       unless response.status == 200 and response.body =~ /Delete Succeeded/ or ignoreFailure
         raise ExecutionError, "Failed Unloading"
       end
@@ -86,7 +89,10 @@ module RokuBuilder
     # Convert sideloaded app to squashfs
     def squash(options:, ignoreFailure: false)
       payload =  {mysubmit: "Convert to squashfs", archive: ""}
-      response  = multipart_connection.post "/plugin_install", payload
+      response = nil
+      multipart_connection do |conn|
+        response = conn.post "/plugin_install", payload
+      end
       unless response.status == 200 and response.body =~ /Conversion succeeded/ or ignoreFailure
         raise ExecutionError, "Failed Converting to Squashfs"
       end
@@ -104,13 +110,16 @@ module RokuBuilder
       [:sideload, :build].include? options.command
     end
 
-    def upload(options)
+    def upload(options:,  device: nil)
       payload =  {
         mysubmit: "Replace",
         archive: Faraday::UploadIO.new(file_path(:in), 'application/zip'),
       }
       payload["remotedebug"] = "1" if options[:remoteDebug]
-      response = multipart_connection.post "/plugin_install", payload
+      response = nil
+      multipart_connection(device: device) do |conn|
+        response = conn.post "/plugin_install", payload
+      end
       @logger.debug("Status: #{response.status}, Body: #{response.body}")
       if response.status==200 and response.body=~/Identical to previous version/
         @logger.warn("Sideload identival to previous version")

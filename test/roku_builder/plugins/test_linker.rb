@@ -9,10 +9,12 @@ module RokuBuilder
       RokuBuilder.class_variable_set(:@@dev, false)
       RokuBuilder.setup_plugins
       register_plugins(Linker)
+      @device_manager = Minitest::Mock.new
       @requests = []
     end
     def teardown
       @requests.each {|req| remove_request_stub(req)}
+      @device_manager.verify
     end
     def test_linker_parse_options_long
       parser = OptionParser.new
@@ -41,8 +43,14 @@ module RokuBuilder
       options = {deeplink: 'a:A, b:B:C, d:a\b'}
       config, options = build_config_options_objects(LinkerTest, options, false)
 
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:release_device, nil, [device])
+
       linker = Linker.new(config: config)
-      linker.deeplink(options: options)
+      RokuBuilder.stub(:device_manager, @device_manager) do
+        linker.deeplink(options: options)
+      end
     end
     def test_linker_link_sideload
       @requests.push(stub_request(:post, "http://192.168.0.100:8060/launch/dev?a=A&b=B:C&d=a%5Cb").
@@ -55,8 +63,14 @@ module RokuBuilder
       options = {deeplink: 'a:A, b:B:C, d:a\b',  working: true}
       config, options = build_config_options_objects(LinkerTest, options, false)
 
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:release_device, nil, [device])
+
       linker = Linker.new(config: config)
-      linker.deeplink(options: options)
+      RokuBuilder.stub(:device_manager, @device_manager) do
+        linker.deeplink(options: options)
+      end
     end
     def test_linker_link_sideload_current
       @requests.push(stub_request(:post, "http://192.168.0.100:8060/launch/dev?a=A&b=B:C&d=a%5Cb").
@@ -72,8 +86,14 @@ module RokuBuilder
         config, options = build_config_options_objects(LinkerTest, options, false)
       end
 
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:release_device, nil, [device])
+
       linker = Linker.new(config: config)
-      linker.deeplink(options: options)
+      RokuBuilder.stub(:device_manager, @device_manager) do
+        linker.deeplink(options: options)
+      end
     end
     def test_linker_link_app
       @requests.push(stub_request(:post, "http://192.168.0.100:8060/launch/1234?a=A&b=B:C&d=a%5Cb").
@@ -82,8 +102,14 @@ module RokuBuilder
       options = {deeplink: 'a:A, b:B:C, d:a\b', app_id: "1234"}
       config, options = build_config_options_objects(LinkerTest, options, false)
 
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:release_device, nil, [device])
+
       linker = Linker.new(config: config)
-      linker.deeplink(options: options)
+      RokuBuilder.stub(:device_manager, @device_manager) do
+        linker.deeplink(options: options)
+      end
     end
     def test_linker_link_nothing
       @requests.push(stub_request(:post, "http://192.168.0.100:8060/launch/dev").
@@ -92,8 +118,14 @@ module RokuBuilder
       options = {deeplink: ''}
       config, options = build_config_options_objects(LinkerTest, options, false)
 
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:release_device, nil, [device])
+
       linker = Linker.new(config: config)
-      linker.deeplink(options: options)
+      RokuBuilder.stub(:device_manager, @device_manager) do
+        linker.deeplink(options: options)
+      end
     end
     def test_linker_link_sideload_input
       @requests.push(stub_request(:post, "http://192.168.0.100:8060/input?a=A&b=B:C&d=a%5Cb").
@@ -106,8 +138,14 @@ module RokuBuilder
       options = {input: 'a:A, b:B:C, d:a\b',  working: true}
       config, options = build_config_options_objects(LinkerTest, options, false)
 
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:release_device, nil, [device])
+
       linker = Linker.new(config: config)
-      linker.input(options: options)
+      RokuBuilder.stub(:device_manager, @device_manager) do
+        linker.input(options: options)
+      end
     end
     def test_linker_link_app_input
       @requests.push(stub_request(:post, "http://192.168.0.100:8060/input?a=A&b=B:C&d=a%5Cb").
@@ -116,8 +154,14 @@ module RokuBuilder
       options = {input: 'a:A, b:B:C, d:a\b', app_id: "1234"}
       config, options = build_config_options_objects(LinkerTest, options, false)
 
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:release_device, nil, [device])
+
       linker = Linker.new(config: config)
-      linker.input(options: options)
+      RokuBuilder.stub(:device_manager, @device_manager) do
+        linker.input(options: options)
+      end
     end
     def test_linker_link_nothing_input
       @requests.push(stub_request(:post, "http://192.168.0.100:8060/input").
@@ -126,8 +170,14 @@ module RokuBuilder
       options = {input: ''}
       config, options = build_config_options_objects(LinkerTest, options, false)
 
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:release_device, nil, [device])
+
       linker = Linker.new(config: config)
-      linker.input(options: options)
+      RokuBuilder.stub(:device_manager, @device_manager) do
+        linker.input(options: options)
+      end
     end
 
     def test_linker_list
@@ -143,13 +193,19 @@ module RokuBuilder
       options = {applist: true}
       config, options = build_config_options_objects(LinkerTest, options, false)
 
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:release_device, nil, [device])
+
       linker = Linker.new(config: config)
 
       print_count = 0
       did_print = Proc.new { |msg| print_count+=1 }
 
-      linker.stub(:printf, did_print) do
-        linker.applist(options: options)
+      RokuBuilder.stub(:device_manager, @device_manager) do
+        linker.stub(:printf, did_print) do
+          linker.applist(options: options)
+        end
       end
 
       assert_equal 6, print_count

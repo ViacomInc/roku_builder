@@ -68,7 +68,6 @@ module RokuBuilder
 
   def self.execute
     load_config
-    check_devices
     execute_command
   end
 
@@ -171,24 +170,8 @@ module RokuBuilder
     end
   end
 
-  def self.check_devices
-    if @@options.device_command?
-      ping = Net::Ping::External.new
-      host = @@config.parsed[:device_config][:ip]
-      return if ping.ping? host, 1, 0.2, 1
-      raise DeviceError, "Device not online" if @@options[:device_given]
-      @@config.raw[:devices].each_pair {|key, value|
-        unless key == :default
-          host = value[:ip]
-          if ping.ping? host, 1, 0.2, 1
-            @@config.parsed[:device_config] = value
-            Logger.instance.warn("Default device offline, choosing Alternate")
-            return
-          end
-        end
-      }
-      raise DeviceError, "No devices found"
-    end
+  def self.device_manager
+    @@device_manager ||= DeviceManager.new(config: @@config, options: @@options)
   end
 
   def self.execute_command

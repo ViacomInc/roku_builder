@@ -21,8 +21,12 @@ module RokuBuilder
         user: "user",
         password: "password"
       }
-      @config.instance_variable_set(:@parsed, {device_config: device_config, init_params: {}})
       @monitor = Monitor.new(config: @config)
+      @device_manager = Minitest::Mock.new
+      @device = RokuBuilder::Device.new("roku", device_config)
+    end
+    def teardown
+      @device_manager.verify
     end
     def test_scripter_parse_options_long
       parser = OptionParser.new
@@ -51,11 +55,15 @@ module RokuBuilder
         sleep(0.1)
         "q"
       }
+      @device_manager.expect(:reserve_device, @device, [{no_lock: true}])
+      @device_manager.expect(:release_device, nil, [@device])
 
-      Readline.stub(:readline, readline) do
-        Net::Telnet.stub(:new, @connection) do
-          @connection.stub(:waitfor, waitfor, "txt") do
-            @monitor.monitor(options: @options)
+      RokuBuilder.stub(:device_manager, @device_manager) do
+        Readline.stub(:readline, readline) do
+          Net::Telnet.stub(:new, @connection) do
+            @connection.stub(:waitfor, waitfor, "txt") do
+              @monitor.monitor(options: @options)
+            end
           end
         end
       end
@@ -73,11 +81,16 @@ module RokuBuilder
         sleep(0.1)
         "q"
       }
-      Readline.stub(:readline, readline) do
-        Net::Telnet.stub(:new, @connection) do
-          @connection.stub(:waitfor, waitfor, "txt") do
-            @monitor.stub(:manage_text, "") do
-              @monitor.monitor(options: @options)
+      @device_manager.expect(:reserve_device, @device, [{no_lock: true}])
+      @device_manager.expect(:release_device, nil, [@device])
+
+      RokuBuilder.stub(:device_manager, @device_manager) do
+        Readline.stub(:readline, readline) do
+          Net::Telnet.stub(:new, @connection) do
+            @connection.stub(:waitfor, waitfor, "txt") do
+              @monitor.stub(:manage_text, "") do
+                @monitor.monitor(options: @options)
+              end
             end
           end
         end
@@ -110,12 +123,16 @@ module RokuBuilder
           "q"
         end
       }
+      @device_manager.expect(:reserve_device, @device, [{no_lock: true}])
+      @device_manager.expect(:release_device, nil, [@device])
 
-      Readline.stub(:readline, readline) do
-        Net::Telnet.stub(:new, @connection) do
-          @connection.stub(:waitfor, waitfor, "txt") do
-            @connection.stub(:puts, puts) do
-              @monitor.monitor(options: @options)
+      RokuBuilder.stub(:device_manager, @device_manager) do
+        Readline.stub(:readline, readline) do
+          Net::Telnet.stub(:new, @connection) do
+            @connection.stub(:waitfor, waitfor, "txt") do
+              @connection.stub(:puts, puts) do
+                @monitor.monitor(options: @options)
+              end
             end
           end
         end

@@ -38,21 +38,23 @@ module RokuBuilder
     # Run tests and report results
     # @param sideload_config [Hash] The config for sideloading the app
     def test(options:)
-      loader = Loader.new(config: @config)
-      loader.sideload(options: options)
-      linker = Linker.new(config: @config)
-      linker.deeplink(options: Options.new(options: {deeplink: "RunTests:true"}))
+      get_device do |device|
+        loader = Loader.new(config: @config)
+        loader.sideload(options: options, device: device)
+        linker = Linker.new(config: @config)
+        linker.deeplink(options: Options.new(options: {deeplink: "RunTests:true"}), device: device)
 
-      telnet_config ={
-        'Host' => @roku_ip_address,
-        'Port' => 8085
-      }
-      connection = Net::Telnet.new(telnet_config)
-      connection.waitfor(@end_reg) do |txt|
-        handle_text(txt: txt)
+        telnet_config ={
+          'Host' => device.ip,
+          'Port' => 8085
+        }
+        connection = Net::Telnet.new(telnet_config)
+        connection.waitfor(@end_reg) do |txt|
+          handle_text(txt: txt)
+        end
+        print_logs
+        connection.puts("cont\n")
       end
-      print_logs
-      connection.puts("cont\n")
     end
 
     private

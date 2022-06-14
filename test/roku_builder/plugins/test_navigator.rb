@@ -82,14 +82,23 @@ module RokuBuilder
       options = {}
       options[type] = input.to_s
       config, options = build_config_options_objects(NavigatorTest, options, false)
+
+      device_manager = Minitest::Mock.new
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      device_manager.expect(:release_device, nil, [device])
+
       navigator = Navigator.new(config: config)
-      if success
-        navigator.send(type, options: options)
-      else
-        assert_raises ExecutionError do
+      RokuBuilder.stub(:device_manager, device_manager) do
+        if success
           navigator.send(type, options: options)
+        else
+          assert_raises ExecutionError do
+            navigator.send(type, options: options)
+          end
         end
       end
+      device_manager.verify
     end
 
     def test_navigator_screen_secret
@@ -116,8 +125,16 @@ module RokuBuilder
         logger.expect(:debug, nil, ["Send Command: /keypress/Rev"])
       end
 
-      navigator.screen(options: options)
+      device_manager = Minitest::Mock.new
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      device_manager.expect(:release_device, nil, [device])
 
+      RokuBuilder.stub(:device_manager, device_manager) do
+        navigator.screen(options: options)
+      end
+
+      device_manager.verify
       logger.verify
       Logger.set_testing
     end
@@ -231,9 +248,18 @@ module RokuBuilder
       options = {navigate: true}
       config, options = build_config_options_objects(NavigatorTest, options, false)
       navigator = Navigator.new(config: config)
-      navigator.stub(:read_char, "\u0003") do
-        navigator.navigate(options: options)
+
+      device_manager = Minitest::Mock.new
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      device_manager.expect(:release_device, nil, [device])
+
+      RokuBuilder.stub(:device_manager, device_manager) do
+        navigator.stub(:read_char, "\u0003") do
+          navigator.navigate(options: options)
+        end
       end
+      device_manager.verify
     end
 
     def test_navigator_interactive_nav
@@ -249,7 +275,7 @@ module RokuBuilder
         @i += 1
         char
       }
-      thread_new = lambda { |char|
+      thread_new = lambda { |char,device|
         assert_equal "<", char
       }
       @requests.push(stub_request(:post, "http://192.168.0.100:8060/keypress/Rev").
@@ -257,19 +283,31 @@ module RokuBuilder
       options = {navigate: true}
       config, options = build_config_options_objects(NavigatorTest, options, false)
       navigator = Navigator.new(config: config)
-      navigator.stub(:read_char, read_char) do
-        Thread.stub(:new, thread_new, "<") do
-          navigator.navigate(options: options)
+
+      device_manager = Minitest::Mock.new
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      device_manager.expect(:release_device, nil, [device])
+
+      RokuBuilder.stub(:device_manager, device_manager) do
+        navigator.stub(:read_char, read_char) do
+          Thread.stub(:new, thread_new, "<") do
+            navigator.navigate(options: options)
+          end
         end
       end
+      device_manager.verify
     end
-    def test_navigator_hendle_interactive_text
+    def test_navigator_handle_interactive_text
       @requests.push(stub_request(:post, "http://192.168.0.100:8060/keypress/LIT_b").
         to_return(status: 200, body: "", headers: {}))
       options = {navigate: true}
       config, options = build_config_options_objects(NavigatorTest, options, false)
       navigator = Navigator.new(config: config)
-      navigator.send(:handle_navigate_input, "b")
+
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+
+      navigator.send(:handle_navigate_input, "b", device)
     end
     def test_navigator_hendle_interactive_command
       @requests.push(stub_request(:post, "http://192.168.0.100:8060/keypress/Play").
@@ -277,7 +315,10 @@ module RokuBuilder
       options = {navigate: true}
       config, options = build_config_options_objects(NavigatorTest, options, false)
       navigator = Navigator.new(config: config)
-      navigator.send(:handle_navigate_input, "=")
+
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+
+      navigator.send(:handle_navigate_input, "=", device)
     end
     def test_navigator_generate_mappings
       options = {navigate: true}

@@ -36,14 +36,16 @@ module RokuBuilder
     end
 
     # Deeplink to an app
-    def deeplink(options:)
-      if options.has_source?
-        Loader.new(config: @config).sideload(options: options)
+    def deeplink(options:, device: nil)
+      get_device(device: device) do |device|
+        if options.has_source?
+          Loader.new(config: @config).sideload(options: options, device: device)
+        end
+        app_id = options[:app_id]
+        app_id ||= "dev"
+        path = "/launch/#{app_id}"
+        send_options(path: path, options: options[:deeplink], device: device)
       end
-      app_id = options[:app_id]
-      app_id ||= "dev"
-      path = "/launch/#{app_id}"
-      send_options(path: path, options: options[:deeplink])
     end
 
     def input(options:)
@@ -54,8 +56,10 @@ module RokuBuilder
     # @param logger [Logger] System Logger
     def applist(options:)
       path = "/query/apps"
-      conn = multipart_connection(port: 8060)
-      response = conn.get path
+      response = nil
+      multipart_connection(port: 8060) do |conn|
+        response = conn.get path
+      end
 
       if response.success?
         regexp = /id="([^"]*)"\stype="([^"]*)"\sversion="([^"]*)">([^<]*)</
@@ -70,22 +74,25 @@ module RokuBuilder
 
     private
 
-    def send_options(path:, options:)
+    def send_options(path:, options:, device: nil)
       payload = RokuBuilder.options_parse(options: options)
+      get_device(device: device) do |device|
+        unless payload.keys.count > 0
+          @logger.warn "No options sent to launched app"
+        else
+          payload = parameterize(payload)
+          path = "#{path}?#{payload}"
+            @logger.info "Deeplink:"
+          @logger.info payload
+          @logger.info "CURL:"
+          @logger.info "curl -d '' 'http://#{device.ip}:8060#{path}'"
+        end
 
-      unless payload.keys.count > 0
-        @logger.warn "No options sent to launched app"
-      else
-        payload = parameterize(payload)
-        path = "#{path}?#{payload}"
-        @logger.info "Deeplink:"
-        @logger.info payload
-        @logger.info "CURL:"
-        @logger.info "curl -d '' '#{@url}:8060#{path}'"
+        multipart_connection(port: 8060, device: device) do |conn|
+          response = conn.post path
+          @logger.fatal("Failed Deeplinking") unless response.success?
+        end
       end
-
-      response = multipart_connection(port: 8060).post path
-      @logger.fatal("Failed Deeplinking") unless response.success?
     end
 
     # Parameterize options to be sent to the app

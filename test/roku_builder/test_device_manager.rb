@@ -7,18 +7,12 @@ module RokuBuilder
     def setup
       Logger.set_testing
       @ping = Minitest::Mock.new
-      ["roku", "test2"].each do |device|
-        path = File.join(Dir.tmpdir, device)
-        File.delete(path) if File.exist?(path)
-      end
+      clean_device_locks(["roku", "test2"])
     end
 
     def teardown
       @ping.verify
-      ["roku", "test2"].each do |device|
-        path = File.join(Dir.tmpdir, device)
-        File.delete(path) if File.exist?(path)
-      end
+      clean_device_locks(["roku", "test2"])
     end
 
     def test_device_manager_init
@@ -60,6 +54,19 @@ module RokuBuilder
         assert_raises(DeviceError) do
           device2 = manager.reserve_device
         end
+      end
+    end
+
+    def test_device_manager_reserve_device_no_lock_first
+      Net::Ping::External.stub(:new, @ping) do
+        config, options = build_config_options_objects(DeviceManagerTest)
+        @ping.expect(:ping?, true, [config.raw[:devices][:roku][:ip], 1, 0.2, 1])
+        @ping.expect(:ping?, true, [config.raw[:devices][:roku][:ip], 1, 0.2, 1])
+        manager = DeviceManager.new(config: config, options: options)
+        device1 = manager.reserve_device(no_lock: true)
+        device2 = manager.reserve_device
+        assert_equal "roku", device1.name
+        assert_equal "roku", device2.name
       end
     end
 

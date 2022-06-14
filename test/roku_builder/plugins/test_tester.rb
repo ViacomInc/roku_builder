@@ -11,6 +11,8 @@ module RokuBuilder
       @connection = Minitest::Mock.new
       @requests = []
 
+      @device_manager = Minitest::Mock.new
+
       @requests.push(stub_request(:post, "http://192.168.0.100:8060/keypress/Home").
         to_return(status: 200, body: "", headers: {}))
       @requests.push(stub_request(:post, "http://192.168.0.100/plugin_install").
@@ -19,6 +21,7 @@ module RokuBuilder
         to_return(status: 200, body: "", headers: {}))
     end
     def teardown
+      @device_manager.verify
       @connection.verify
       @requests.each {|req| remove_request_stub(req)}
     end
@@ -37,8 +40,14 @@ module RokuBuilder
       @connection.expect(:waitfor, nil, [/\*+\s*End testing\s*\*+/])
       @connection.expect(:puts, nil, ["cont\n"])
 
-      Net::Telnet.stub(:new, @connection) do
-        tester.test(options: options)
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:release_device, nil, [device])
+
+      RokuBuilder.stub(:device_manager, @device_manager) do
+        Net::Telnet.stub(:new, @connection) do
+          tester.test(options: options)
+        end
       end
     end
 
@@ -55,9 +64,15 @@ module RokuBuilder
       @connection.expect(:waitfor, nil, &waitfor)
       @connection.expect(:puts, nil, ["cont\n"])
 
-      Net::Telnet.stub(:new, @connection) do
-        tester.stub(:handle_text, false) do
-          tester.test(options: options)
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:release_device, nil, [device])
+
+      RokuBuilder.stub(:device_manager, @device_manager) do
+        Net::Telnet.stub(:new, @connection) do
+          tester.stub(:handle_text, false) do
+            tester.test(options: options)
+          end
         end
       end
     end

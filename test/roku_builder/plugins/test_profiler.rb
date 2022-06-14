@@ -11,6 +11,10 @@ module RokuBuilder
       unless RokuBuilder.plugins.include?(Profiler)
         RokuBuilder.register_plugin(Profiler)
       end
+      @device_manager = Minitest::Mock.new
+    end
+    def teardown
+      @device_manager.verify
     end
     def test_profiler_parse_options_long
       parser = OptionParser.new
@@ -23,12 +27,16 @@ module RokuBuilder
     def test_profiler_node_tracking
       options = {profile: "stats"}
       config, options = build_config_options_objects(ProfilerTest, options, false)
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      @device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      @device_manager.expect(:release_device, nil, [device])
+
       waitfor = Proc.new do |telnet_config, &blk|
-        assert_equal(/.+/, telnet_config["Match"])
-        assert_equal(1, telnet_config["Timeout"])
-        txt = "<All_Nodes><NodeA /><NodeB /><NodeC><NodeD /></NodeC></All_Nodes>\n"
-        blk.call(txt)
-        true
+      assert_equal(/.+/, telnet_config["Match"])
+      assert_equal(1, telnet_config["Timeout"])
+      txt = "<All_Nodes><NodeA /><NodeB /><NodeC><NodeD /></NodeC></All_Nodes>\n"
+      blk.call(txt)
+      true
       end
       count = 0
       read_stub = Proc.new do |size|
@@ -43,10 +51,12 @@ module RokuBuilder
       connection.expect(:waitfor, nil, &waitfor)
       connection.expect(:close, nil)
 
-      Net::Telnet.stub(:new, connection) do
-        profiler.stub(:printf, nil) do
-          STDIN.stub(:read, read_stub) do
-            profiler.node_tracking(options: options)
+      RokuBuilder.stub(:device_manager, @device_manager) do
+        Net::Telnet.stub(:new, connection) do
+          profiler.stub(:printf, nil) do
+            STDIN.stub(:read, read_stub) do
+              profiler.node_tracking(options: options)
+            end
           end
         end
       end
@@ -56,12 +66,16 @@ module RokuBuilder
     def test_profiler_stats
       options = {profile: "stats"}
       config, options = build_config_options_objects(ProfilerTest, options, false)
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      @device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      @device_manager.expect(:release_device, nil, [device])
+
       waitfor = Proc.new do |telnet_config, &blk|
-        assert_equal(/.+/, telnet_config["Match"])
-        assert_equal(1, telnet_config["Timeout"])
-        txt = "<All_Nodes><NodeA /><NodeB /><NodeC><NodeD /></NodeC></All_Nodes>\n"
-        blk.call(txt)
-        true
+      assert_equal(/.+/, telnet_config["Match"])
+      assert_equal(1, telnet_config["Timeout"])
+      txt = "<All_Nodes><NodeA /><NodeB /><NodeC><NodeD /></NodeC></All_Nodes>\n"
+      blk.call(txt)
+      true
       end
       connection = Minitest::Mock.new
       profiler = Profiler.new(config: config)
@@ -70,9 +84,11 @@ module RokuBuilder
       connection.expect(:waitfor, nil, &waitfor)
       connection.expect(:close, nil)
 
-      Net::Telnet.stub(:new, connection) do
-        profiler.stub(:printf, nil) do
-          profiler.profile(options: options)
+      RokuBuilder.stub(:device_manager, @device_manager) do
+        Net::Telnet.stub(:new, connection) do
+          profiler.stub(:printf, nil) do
+            profiler.profile(options: options)
+          end
         end
       end
 
@@ -81,12 +97,16 @@ module RokuBuilder
     def test_profiler_all
       options = {profile: "all"}
       config, options = build_config_options_objects(ProfilerTest, options, false)
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      @device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      @device_manager.expect(:release_device, nil, [device])
+
       waitfor = Proc.new do |telnet_config, &blk|
-        assert_equal(/.+/, telnet_config["Match"])
-        assert_equal(1, telnet_config["Timeout"])
-        txt = "<All_Nodes><NodeA /><NodeB /><NodeC><NodeD /></NodeC></All_Nodes>\n"
-        blk.call(txt)
-        true
+      assert_equal(/.+/, telnet_config["Match"])
+      assert_equal(1, telnet_config["Timeout"])
+      txt = "<All_Nodes><NodeA /><NodeB /><NodeC><NodeD /></NodeC></All_Nodes>\n"
+      blk.call(txt)
+      true
       end
       connection = Minitest::Mock.new
       profiler = Profiler.new(config: config)
@@ -95,9 +115,11 @@ module RokuBuilder
       connection.expect(:waitfor, nil, &waitfor)
       connection.expect(:close, nil)
 
-      Net::Telnet.stub(:new, connection) do
-        profiler.stub(:print, nil) do
-          profiler.profile(options: options)
+      RokuBuilder.stub(:device_manager, @device_manager) do
+        Net::Telnet.stub(:new, connection) do
+          profiler.stub(:print, nil) do
+            profiler.profile(options: options)
+          end
         end
       end
 
@@ -106,12 +128,16 @@ module RokuBuilder
     def test_profiler_roots
       options = {profile: "roots"}
       config, options = build_config_options_objects(ProfilerTest, options, false)
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      @device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      @device_manager.expect(:release_device, nil, [device])
+
       waitfor = Proc.new do |telnet_config, &blk|
-        assert_equal(/.+/, telnet_config["Match"])
-        assert_equal(1, telnet_config["Timeout"])
-        txt = "<Root_Nodes><NodeA /><NodeB /><NodeC><NodeD /></NodeC></Root_Nodes>\n"
-        blk.call(txt)
-        true
+      assert_equal(/.+/, telnet_config["Match"])
+      assert_equal(1, telnet_config["Timeout"])
+      txt = "<Root_Nodes><NodeA /><NodeB /><NodeC><NodeD /></NodeC></Root_Nodes>\n"
+      blk.call(txt)
+      true
       end
       connection = Minitest::Mock.new
       profiler = Profiler.new(config: config)
@@ -120,9 +146,11 @@ module RokuBuilder
       connection.expect(:waitfor, nil, &waitfor)
       connection.expect(:close, nil)
 
-      Net::Telnet.stub(:new, connection) do
-        profiler.stub(:print, nil) do
-          profiler.profile(options: options)
+      RokuBuilder.stub(:device_manager, @device_manager) do
+        Net::Telnet.stub(:new, connection) do
+          profiler.stub(:print, nil) do
+            profiler.profile(options: options)
+          end
         end
       end
       connection.verify
@@ -130,12 +158,16 @@ module RokuBuilder
     def test_profiler_node
       options = {profile: "nodeId"}
       config, options = build_config_options_objects(ProfilerTest, options, false)
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      @device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      @device_manager.expect(:release_device, nil, [device])
+
       waitfor = Proc.new do |telnet_config, &blk|
-        assert_equal(/.+/, telnet_config["Match"])
-        assert_equal(1, telnet_config["Timeout"])
-        txt = "<nodeId><NodeA /><NodeB /><NodeC><NodeD /></NodeC></nodeId>\n"
-        blk.call(txt)
-        true
+      assert_equal(/.+/, telnet_config["Match"])
+      assert_equal(1, telnet_config["Timeout"])
+      txt = "<nodeId><NodeA /><NodeB /><NodeC><NodeD /></NodeC></nodeId>\n"
+      blk.call(txt)
+      true
       end
       connection = Minitest::Mock.new
       profiler = Profiler.new(config: config)
@@ -144,9 +176,11 @@ module RokuBuilder
       connection.expect(:waitfor, nil, &waitfor)
       connection.expect(:close, nil)
 
-      Net::Telnet.stub(:new, connection) do
-        profiler.stub(:print, nil) do
-          profiler.profile(options: options)
+      RokuBuilder.stub(:device_manager, @device_manager) do
+        Net::Telnet.stub(:new, connection) do
+          profiler.stub(:print, nil) do
+            profiler.profile(options: options)
+          end
         end
       end
       connection.verify
@@ -154,12 +188,16 @@ module RokuBuilder
     def test_profiler_images
       options = {profile: "images"}
       config, options = build_config_options_objects(ProfilerTest, options, false)
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      @device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      @device_manager.expect(:release_device, nil, [device])
+
       waitfor = Proc.new do |telnet_config, &blk|
-        assert_equal(/.+/, telnet_config["Match"])
-        assert_equal(1, telnet_config["Timeout"])
-        txt = " RoGraphics instance\n0x234 1 2 3 4\nAvailable memory\n"
-        blk.call(txt)
-        true
+      assert_equal(/.+/, telnet_config["Match"])
+      assert_equal(1, telnet_config["Timeout"])
+      txt = " RoGraphics instance\n0x234 1 2 3 4\nAvailable memory\n"
+      blk.call(txt)
+      true
       end
       connection = Minitest::Mock.new
       profiler = Profiler.new(config: config)
@@ -168,9 +206,11 @@ module RokuBuilder
       connection.expect(:waitfor, nil, &waitfor)
       connection.expect(:close, nil)
 
-      Net::Telnet.stub(:new, connection) do
-        profiler.stub(:print, nil) do
-          profiler.profile(options: options)
+      RokuBuilder.stub(:device_manager, @device_manager) do
+        Net::Telnet.stub(:new, connection) do
+          profiler.stub(:print, nil) do
+            profiler.profile(options: options)
+          end
         end
       end
 
@@ -180,12 +220,16 @@ module RokuBuilder
     def test_profiler_memmory
       options = {profile: "memmory"}
       config, options = build_config_options_objects(ProfilerTest, options, false)
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      @device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      @device_manager.expect(:release_device, nil, [device])
+
       waitfor = Proc.new do |telnet_config, &blk|
-        assert_equal(/.+/, telnet_config["Match"])
-        assert_equal(1, telnet_config["Timeout"])
-        txt = " RoGraphics instance 0x123\nAvailable memory 123 used 456 max 579\n"
-        blk.call(txt)
-        true
+      assert_equal(/.+/, telnet_config["Match"])
+      assert_equal(1, telnet_config["Timeout"])
+      txt = " RoGraphics instance 0x123\nAvailable memory 123 used 456 max 579\n"
+      blk.call(txt)
+      true
       end
       print_count = 0
       print_stub = Proc.new do |message|
@@ -216,9 +260,11 @@ module RokuBuilder
       connection.expect(:puts, nil, &puts_stub)
       connection.expect(:close, nil)
 
-      Net::Telnet.stub(:new, connection) do
-        profiler.stub(:print, print_stub) do
-          profiler.profile(options: options)
+      RokuBuilder.stub(:device_manager, @device_manager) do
+        Net::Telnet.stub(:new, connection) do
+          profiler.stub(:print, print_stub) do
+            profiler.profile(options: options)
+          end
         end
       end
 
@@ -228,15 +274,19 @@ module RokuBuilder
     def test_profiler_textures
       options = {profile: "textures"}
       config, options = build_config_options_objects(ProfilerTest, options, false)
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      @device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      @device_manager.expect(:release_device, nil, [device])
+
       waitfor = Proc.new do |telnet_config, &blk|
-        assert_equal(/.+/, telnet_config["Match"])
-        assert_equal(1, telnet_config["Timeout"])
-        txt = "*******\ntexture\n"
-        blk.call(txt)
-        true
+      assert_equal(/.+/, telnet_config["Match"])
+      assert_equal(1, telnet_config["Timeout"])
+      txt = "*******\ntexture\n"
+      blk.call(txt)
+      true
       end
       timeout = Proc.new do |telnet_config, &blk|
-        raise ::Net::ReadTimeout
+      raise ::Net::ReadTimeout
       end
       connection = Minitest::Mock.new
       profiler = Profiler.new(config: config)
@@ -246,9 +296,11 @@ module RokuBuilder
       connection.expect(:waitfor, nil, &timeout)
       connection.expect(:close, nil)
 
-      Net::Telnet.stub(:new, connection) do
-        profiler.stub(:print, nil) do
-          profiler.profile(options: options)
+      RokuBuilder.stub(:device_manager, @device_manager) do
+        Net::Telnet.stub(:new, connection) do
+          profiler.stub(:print, nil) do
+            profiler.profile(options: options)
+          end
         end
       end
 
@@ -257,19 +309,28 @@ module RokuBuilder
     def test_profiler_devlog
       options = {devlog: "rendezvous", devlog_function: "on"}
       config, options = build_config_options_objects(ProfilerTest, options, false)
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      @device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      @device_manager.expect(:release_device, nil, [device])
 
       connection = Minitest::Mock.new
       connection.expect(:puts, nil, ["enhanced_dev_log rendezvous on\n"])
 
       profiler = Profiler.new(config: config)
-      Net::Telnet.stub(:new, connection) do
-        profiler.devlog(options: options)
+      RokuBuilder.stub(:device_manager, @device_manager) do
+        Net::Telnet.stub(:new, connection) do
+          profiler.devlog(options: options)
+        end
       end
       connection.verify
     end
     def test_profiler_sgperf
       options = {sgperf: true}
       config, options = build_config_options_objects(ProfilerTest, options, false)
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      @device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      @device_manager.expect(:release_device, nil, [device])
+
       profiler = Profiler.new(config: config)
 
       connection = Object.new
@@ -298,11 +359,13 @@ module RokuBuilder
         raise Net::ReadTimeout
       }
 
-      Net::Telnet.stub(:new, connection) do
-        connection.stub(:puts, puts_stub) do
-          txt = ">>thread node calls: create     0 + op    24  @ 100.0% rendezvous"
-          connection.stub(:waitfor, waitfor, txt) do
-            profiler.sgperf(options: options)
+      RokuBuilder.stub(:device_manager, @device_manager) do
+        Net::Telnet.stub(:new, connection) do
+          connection.stub(:puts, puts_stub) do
+            txt = ">>thread node calls: create     0 + op    24  @ 100.0% rendezvous"
+            connection.stub(:waitfor, waitfor, txt) do
+              profiler.sgperf(options: options)
+            end
           end
         end
       end
@@ -315,6 +378,10 @@ module RokuBuilder
     def test_profiler_sgperf_multi_lines
       options = {sgperf: true}
       config, options = build_config_options_objects(ProfilerTest, options, false)
+      device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
+      @device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      @device_manager.expect(:release_device, nil, [device])
+
       profiler = Profiler.new(config: config)
 
       connection = Object.new
@@ -357,11 +424,13 @@ module RokuBuilder
         call_count += 1
       }
 
-      Net::Telnet.stub(:new, connection) do
-        connection.stub(:puts, connection_puts) do
-          profiler.stub(:get_command_response, command_response) do
-            profiler.stub(:puts, profiler_puts) do
-              profiler.sgperf(options: options)
+      RokuBuilder.stub(:device_manager, @device_manager) do
+        Net::Telnet.stub(:new, connection) do
+          connection.stub(:puts, connection_puts) do
+            profiler.stub(:get_command_response, command_response) do
+              profiler.stub(:puts, profiler_puts) do
+                profiler.sgperf(options: options)
+              end
             end
           end
         end

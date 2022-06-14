@@ -9,14 +9,14 @@ module RokuBuilder
       @options = options
     end
 
-    def reserve_device
+    def reserve_device(no_lock: false)
       message = "No Devices Found"
       if @options[:device_given]
         device = Device.new(@options[:device], @config.raw[:devices][@options[:device].to_sym])
-        return device if device_avaiable!(device)
+        return device if device_avaiable!(device: device, no_lock: no_lock)
         message = "Device #{@options[:device]} not found"
       else
-        device = reserve_any
+        device = reserve_any(no_lock: no_lock)
         return device if device
       end
       raise DeviceError, message
@@ -29,21 +29,22 @@ module RokuBuilder
 
     private
 
-    def reserve_any
-      default = @config.raw[:devices][:default]
-      all_devices = @config.raw[:devices].keys.reject{|key, value| [:default, default].include?(key)}
+    def reserve_any(no_lock: false)
+      default = @config.device_default
+      all_devices = @config.devices.keys.reject{|key, value| default == key}
       all_devices.unshift(default)
       all_devices.each do |device_name|
-        device = Device.new(device_name, @config.raw[:devices][device_name])
-        if device_avaiable!(device)
+        device = Device.new(device_name, @config.devices[device_name])
+        if device_avaiable!(device: device, no_lock: no_lock)
           return device
         end
       end
       nil
     end
 
-    def device_avaiable!(device)
+    def device_avaiable!(device:, no_lock: false)
       return false unless device_ping?(device)
+      return true if no_lock
       lock = lock_file(device).flock(File::LOCK_EX|File::LOCK_NB)
       return false if lock == false
       true

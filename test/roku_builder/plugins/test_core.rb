@@ -18,7 +18,7 @@ module RokuBuilder
         "--do-unstage", "--edit", "params", "--config", "config-path",
         "--ref", "ref", "--working", "--current", "--stage", "stage", "--project",
         "project", "--out", "out", "--in", "in", "--device", "device",
-        "--verbose", "--debug"]
+        "--device-blocking", "--verbose", "--debug"]
       parser.parse! argv
       assert options[:configure]
       assert options[:validate]
@@ -35,6 +35,7 @@ module RokuBuilder
       assert_equal "out", options[:out]
       assert_equal "in", options[:in]
       assert_equal "device", options[:device]
+      assert options[:device_blocking]
       assert options[:verbose]
       assert options[:debug]
     end

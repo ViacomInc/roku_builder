@@ -68,6 +68,9 @@ module RokuBuilder
       parser.on("-D", "--device ID", "Use a different device corresponding to the given ID") do |d|
         options[:device] = d
       end
+      parser.on("--device-blocking", "Block and wait for a device if none is ready. Does not work with --device") do
+        options[:device_blocking] = true
+      end
       parser.on("-V", "--verbose", "Print Info message") do
         options[:verbose] = true
       end

@@ -144,6 +144,44 @@ module RokuBuilder
         assert_equal "test2", device.name
       end
     end
+
+    def test_device_manager_reserve_device_blocking
+      Net::Ping::External.stub(:new, FakePing.new) do
+        Thread.abort_on_exception = true
+        options = {validate: true, device_blocking: true}
+        config, options = build_config_options_objects(DeviceManagerTest, options)
+        manager = DeviceManager.new(config: config, options: options)
+        device = manager.reserve_device
+        t = Thread.new do
+          Thread.current[:device] = manager.reserve_device
+        end
+        manager.release_device(device)
+        t.join
+        assert_equal "roku", t[:device].name
+      end
+    end
+
+    def test_device_manager_reserve_device_blocking_timeout
+      Net::Ping::External.stub(:new, FakePing.new) do
+        options = {validate: true, device_blocking: true}
+        config, options = build_config_options_objects(DeviceManagerTest, options)
+        manager = DeviceManager.new(config: config, options: options)
+        manager.instance_variable_set(:@timeout_duration, 0.01)
+        device = manager.reserve_device
+        assert_raises(DeviceError) do
+          puts manager.reserve_device.name
+          puts device.name
+        end
+      end
+    end
+  end
+  class FakePing
+    def initialize(ret: true)
+      @ret = ret
+    end
+    def ping?(*args)
+      @ret
+    end
   end
 end
 

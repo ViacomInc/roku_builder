@@ -7,6 +7,7 @@ module RokuBuilder
     def initialize(options:, config:)
       @config = config
       @options = options
+      @timeout_duration = 3600
     end
 
     def reserve_device(no_lock: false)
@@ -16,8 +17,16 @@ module RokuBuilder
         return device if device_avaiable!(device: device, no_lock: no_lock)
         message = "Device #{@options[:device]} not found"
       else
-        device = reserve_any(no_lock: no_lock)
-        return device if device
+        begin
+          Timeout::timeout(@timeout_duration) do
+            loop do
+              device = reserve_any(no_lock: no_lock)
+              return device if device
+              break unless @options[:device_blocking]
+            end
+          end
+        rescue Timeout::Error
+        end
       end
       raise DeviceError, message
     end

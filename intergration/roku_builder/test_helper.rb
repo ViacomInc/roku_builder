@@ -114,8 +114,7 @@ module Helpers
       default: :project1,
       project1: {
       directory: root_dir,
-      folders: ["resources","source","components"],
-      files: ["manifest","file.tmp"],
+      source_files: ["images","source","components", "manifest","file.tmp"],
       app_name: "App Name",
       stage_method: :script,
       stages:{

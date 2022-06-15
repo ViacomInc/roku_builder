@@ -48,7 +48,7 @@ module RokuBuilder
       `#{roku} --sideload --working`
       assert_log @uuid
       output = `#{roku} --profile images`
-      assert_match(/Available memory/, output)
+      assert_match(/Available texture memory/, output)
     end
     def test_profile_textures
       `#{roku} --sideload --working`

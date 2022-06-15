@@ -178,7 +178,7 @@ module RokuBuilder
     def handle_node(stats:,  node:)
       if node
         node.element_children.each do |element|
-          attributes = element.attributes.map{|attr| {"#{attr.name}": attr.value}}.reduce({}, :merge)
+          attributes = element.attributes.map{|key,attr| {"#{key}": attr.value}}.reduce({}, :merge)
           stats[element.name] ||= {count: 0, ids: []}
           stats[element.name][:count] += 1
           stats[element.name][:ids].push(attributes[:name]) if attributes[:name]
@@ -223,8 +223,8 @@ module RokuBuilder
       lines.each {|line| print line}
     end
     def print_nodes_by_id(id)
-      start_reg = /<#{id}>/
-      end_reg = /<\/#{id}>/
+      start_reg = /#{id}/
+      end_reg = /#{id}/
       lines = get_command_response(command: "sgnodes #{id}", start_reg: start_reg, end_reg: end_reg)
       lines.each {|line| print line}
     end

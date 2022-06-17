@@ -76,7 +76,10 @@ module RokuBuilder
 
     # Remove the currently sideloaded app
     def delete(options:, ignoreFailure: false)
-      payload =  {mysubmit: "Delete", archive: ""}
+      payload =  {
+        mysubmit: make_param("Delete"),
+        archive: make_param("", "application/octet-stream")
+      }
       response = nil
       multipart_connection do |conn|
         response = conn.post "/plugin_install", payload

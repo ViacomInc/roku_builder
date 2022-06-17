@@ -129,10 +129,10 @@ module RokuBuilder
     def sign_package(app_name_version:, password:, stage: nil, device: nil)
       get_device(device: device) do |device|
         payload =  {
-          mysubmit: "Package",
-          app_name: app_name_version,
-          passwd: password,
-          pkg_time: Time.now.to_i
+          mysubmit: make_param("Package"),
+          app_name: make_param(app_name_version),
+          passwd: make_param(password),
+          pkg_time: make_param(Time.now.to_i)
         }
         response = nil
         multipart_connection(device: device) do |conn|

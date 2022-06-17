@@ -44,14 +44,18 @@ module RokuBuilder
         url = "http://#{device.ip}"
         url += ":#{port}" if port
         connection = Faraday.new(url: url) do |f|
-          f.headers['Content-Type'] = Faraday::Request::Multipart.mime_type
           f.request :digest, device.user, device.password
           f.request :multipart
           f.request :url_encoded
           f.adapter Faraday.default_adapter
+          f.proxy = "http://localhost:8888"
         end
         block.call(connection)
       end
+    end
+
+    def make_param(value, contentType = nil)
+      Faraday::Multipart::ParamPart.new(value, contentType)
     end
 
     def get_device(device: nil, no_lock: false, &block)

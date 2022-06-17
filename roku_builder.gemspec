@@ -21,7 +21,8 @@ Gem::Specification.new do |spec|
   spec.required_ruby_version = "~> 3.0"
 
   spec.add_dependency "rubyzip",             "~> 1.2"
-  spec.add_dependency "faraday",             "~> 0.13"
+  spec.add_dependency "faraday",             "~> 2.3"
+  spec.add_dependency "faraday-multipart",   "~> 1.0"
   spec.add_dependency "faraday-digestauth",  "~> 0.2"
   spec.add_dependency "git",                 "~> 1.3"
   spec.add_dependency "net-ping",            "~> 2.0"

@@ -2,6 +2,7 @@
 
 require "logger"
 require "faraday"
+require "faraday/multipart"
 require "faraday/digestauth"
 require "pathname"
 require "optparse"

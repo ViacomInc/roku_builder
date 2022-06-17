@@ -21,7 +21,10 @@ module RokuBuilder
           Timeout::timeout(@timeout_duration) do
             loop do
               device = reserve_any(no_lock: no_lock)
-              return device if device
+              if device
+                Logger.instance.info "Using Device: #{device.to_s}"
+                return device
+              end
               break unless @options[:device_blocking]
             end
           end
@@ -54,8 +57,18 @@ module RokuBuilder
     def device_avaiable!(device:, no_lock: false)
       return false unless device_ping?(device)
       return true if no_lock
-      lock = lock_file(device).flock(File::LOCK_EX|File::LOCK_NB)
+      file = lock_file(device)
+      lock = file.flock(File::LOCK_EX|File::LOCK_NB)
       return false if lock == false
+      text = file.readlines
+      return false if text.count > 0
+      file.write($$)
+      file.pos = 0
+      text = file.readlines
+      if text[0] != $$.to_s
+        file.flock(File::LOCK_UN)
+        return false
+      end
       true
     end
 
@@ -65,7 +78,7 @@ module RokuBuilder
     end
 
     def lock_file(device)
-      File.open(File.join(Dir.tmpdir, device.name), "w+")
+      File.open(File.join(Dir.tmpdir, device.name), "a+")
     end
 
   end
@@ -78,6 +91,10 @@ module RokuBuilder
       @ip = device_config[:ip]
       @user = device_config[:user]
       @password = device_config[:password]
+    end
+
+    def to_s
+      "#{name}:#{ip}"
     end
   end
 end

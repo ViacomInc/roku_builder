@@ -65,7 +65,7 @@ module RokuBuilder
     def test_packager_package_failed
       config, options = build_config_options_objects(PackagerTest, {package: true, stage: "production"}, false)
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, device, no_lock: false)
       @device_manager.expect(:release_device, nil, [device])
 
       @requests.push(stub_request(:post, "http://192.168.0.100:8060/keypress/Home").
@@ -97,13 +97,13 @@ module RokuBuilder
       @requests.push(stub_request(:get, "http://192.168.0.100/pkgs/pkg_url").
         to_return(status: 200, body: body, headers: {}))
 
-      loader.expect(:sideload, nil, [Hash])
-      io.expect(:write, nil, ["package_body"])
-      inspector.expect(:inspect, nil, [Hash])
-
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, device, no_lock: false)
       @device_manager.expect(:release_device, nil, [device])
+
+      loader.expect(:sideload, nil, options: Hash, device: device)
+      io.expect(:write, nil, ["package_body"])
+      inspector.expect(:inspect, nil, options: Hash, device: device)
 
       logger.expect(:debug, nil, [String])
       io.expect(:each_line, nil)
@@ -142,7 +142,7 @@ module RokuBuilder
       config, options = build_config_options_objects(PackagerTest, {package: true, stage: "production", inspect_package: true, verbose: true}, false, config)
 
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, device, no_lock: false)
       @device_manager.expect(:release_device, nil, [device])
 
       @requests.push(stub_request(:post, "http://192.168.0.100/plugin_inspect").
@@ -154,10 +154,10 @@ module RokuBuilder
       @requests.push(stub_request(:get, "http://192.168.0.100/pkgs/pkg_url").
         to_return(status: 200, body: body, headers: {}))
 
-      loader.expect(:sideload, nil, [Hash])
-      loader.expect(:squash, nil, [Hash])
+      loader.expect(:sideload, nil, options: Hash, device: device)
+      loader.expect(:squash, nil, options: Hash, device: device)
       io.expect(:write, nil, ["package_body"])
-      inspector.expect(:inspect, nil, [Hash])
+      inspector.expect(:inspect, nil, options: Hash, device: device)
 
       logger.expect(:debug, nil, [String])
       io.expect(:each_line, nil)
@@ -194,7 +194,7 @@ module RokuBuilder
       config = build_config_options_objects(PackagerTest, {key: true, stage: "production"}, false)[0]
 
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, device, no_lock: false)
       @device_manager.expect(:release_device, nil, [device])
 
       packager = Packager.new(config: config)
@@ -212,7 +212,7 @@ module RokuBuilder
 
       config = build_config_options_objects(PackagerTest, {key: true, stage: "production"}, false)[0]
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, device, no_lock: false)
       @device_manager.expect(:release_device, nil, [device])
 
       packager = Packager.new(config: config)
@@ -232,7 +232,7 @@ module RokuBuilder
       dev_id = Proc.new {"#{Random.rand(999999999999)}"}
       config, options = build_config_options_objects(PackagerTest, {key: true, stage: "production"}, false)
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, device, no_lock: false)
       @device_manager.expect(:release_device, nil, [device])
 
       packager = Packager.new(config: config)
@@ -253,7 +253,7 @@ module RokuBuilder
       dev_id = Proc.new {"#{Random.rand(999999999999)}"}
       config, options = build_config_options_objects(PackagerTest, {key: true, stage: "production"}, false)
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, device, no_lock: false)
       @device_manager.expect(:release_device, nil, [device])
 
       packager = Packager.new(config: config)
@@ -268,7 +268,7 @@ module RokuBuilder
     def test_packager_key_same_device
       config, options = build_config_options_objects(PackagerTest, {key: true, stage: "production"}, false)
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, device, no_lock: false)
       @device_manager.expect(:release_device, nil, [device])
 
       body = "<p> Your Dev ID: <font face=\"Courier\">dev_id</font> </p>"
@@ -296,7 +296,7 @@ module RokuBuilder
 
       config = build_config_options_objects(PackagerTest, {genkey: true}, false)[0]
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, device, no_lock: false)
       @device_manager.expect(:release_device, nil, [device])
 
       packager = Packager.new(config: config)
@@ -312,7 +312,7 @@ module RokuBuilder
       config[:projects][:project1][:stages][:production].delete(:key)
       config, options = build_config_options_objects(PackagerTest, {key: true, stage: "production"}, false, config)
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, device, no_lock: false)
       @device_manager.expect(:release_device, nil, [device])
 
       packager = Packager.new(config: config)
@@ -327,8 +327,6 @@ module RokuBuilder
     end
 
     def test_packager_genkey
-      loader = Minitest::Mock.new
-      loader.expect(:sideload, nil, [Hash])
 
       body = "<a href=\"pkgs\">pkg_url</a>"
       @requests.push(stub_request(:post, "http://192.168.0.100/plugin_package").
@@ -336,10 +334,13 @@ module RokuBuilder
       @requests.push(stub_request(:get, "http://192.168.0.100/pkgs/pkg_url").
         to_return(status: 200, body: "", headers: {}))
       config, options = build_config_options_objects(PackagerTest, {genkey: true}, false)
+
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, device, no_lock: false)
       @device_manager.expect(:release_device, nil, [device])
 
+      loader = Minitest::Mock.new
+      loader.expect(:sideload, nil, options: Hash)
 
       packager = Packager.new(config: config)
       RokuBuilder.stub(:device_manager, @device_manager) do

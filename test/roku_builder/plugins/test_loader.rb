@@ -52,7 +52,7 @@ module RokuBuilder
         to_return(status: 200, body: "", headers: {}))
       @request_stubs.push(stub_request(:post, "http://#{@device_config[:ip]}/plugin_install").
         to_return(status: 200, body: "Install Success", headers: {}))
-      @device_manager.expect(:reserve_device, @device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, @device, no_lock: false)
       @device_manager.expect(:release_device, nil, [@device])
 
       RokuBuilder.stub(:device_manager, @device_manager) do
@@ -71,7 +71,7 @@ module RokuBuilder
         to_return(status: 200, body: "", headers: {}))
       @request_stubs.push(stub_request(:post, "http://#{@device_config[:ip]}/plugin_install").
         to_return(status: 200, body: "Install Success", headers: {}))
-      @device_manager.expect(:reserve_device, @device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, @device, no_lock: false)
       @device_manager.expect(:release_device, nil, [@device])
 
       RokuBuilder.stub(:device_manager, @device_manager) do
@@ -113,7 +113,7 @@ module RokuBuilder
     def test_loader_unload
       @request_stubs.push(stub_request(:post, "http://#{@device_config[:ip]}/plugin_install").
         to_return(status: 200, body: "Delete Succeeded", headers: {}))
-      @device_manager.expect(:reserve_device, @device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, @device, no_lock: false)
       @device_manager.expect(:release_device, nil, [@device])
 
       RokuBuilder.stub(:device_manager, @device_manager) do
@@ -124,7 +124,7 @@ module RokuBuilder
     def test_loader_unload_fail
       @request_stubs.push(stub_request(:post, "http://#{@device_config[:ip]}/plugin_install").
         to_return(status: 200, body: "Delete Failed", headers: {}))
-      @device_manager.expect(:reserve_device, @device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, @device, no_lock: false)
       @device_manager.expect(:release_device, nil, [@device])
 
       RokuBuilder.stub(:device_manager, @device_manager) do
@@ -137,7 +137,7 @@ module RokuBuilder
     def test_loader_squash
       @request_stubs.push(stub_request(:post, "http://#{@device_config[:ip]}/plugin_install").
         to_return(status: 200, body: "Conversion succeeded", headers: {}))
-      @device_manager.expect(:reserve_device, @device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, @device, no_lock: false)
       @device_manager.expect(:release_device, nil, [@device])
 
       RokuBuilder.stub(:device_manager, @device_manager) do
@@ -148,7 +148,7 @@ module RokuBuilder
     def test_loader_squash_fail
       @request_stubs.push(stub_request(:post, "http://#{@device_config[:ip]}/plugin_install").
         to_return(status: 200, body: "Conversion failed", headers: {}))
-      @device_manager.expect(:reserve_device, @device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, @device, no_lock: false)
       @device_manager.expect(:release_device, nil, [@device])
 
       RokuBuilder.stub(:device_manager, @device_manager) do

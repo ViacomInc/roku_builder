@@ -44,7 +44,7 @@ module RokuBuilder
       config, options = build_config_options_objects(LinkerTest, options, false)
 
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, device, no_lock: false)
       @device_manager.expect(:release_device, nil, [device])
 
       linker = Linker.new(config: config)
@@ -64,7 +64,7 @@ module RokuBuilder
       config, options = build_config_options_objects(LinkerTest, options, false)
 
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, device, no_lock: false)
       @device_manager.expect(:release_device, nil, [device])
 
       linker = Linker.new(config: config)
@@ -87,7 +87,7 @@ module RokuBuilder
       end
 
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, device, no_lock: false)
       @device_manager.expect(:release_device, nil, [device])
 
       linker = Linker.new(config: config)
@@ -103,7 +103,7 @@ module RokuBuilder
       config, options = build_config_options_objects(LinkerTest, options, false)
 
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, device, no_lock: false)
       @device_manager.expect(:release_device, nil, [device])
 
       linker = Linker.new(config: config)
@@ -119,7 +119,7 @@ module RokuBuilder
       config, options = build_config_options_objects(LinkerTest, options, false)
 
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, device, no_lock: false)
       @device_manager.expect(:release_device, nil, [device])
 
       linker = Linker.new(config: config)
@@ -139,7 +139,7 @@ module RokuBuilder
       config, options = build_config_options_objects(LinkerTest, options, false)
 
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, device, no_lock: false)
       @device_manager.expect(:release_device, nil, [device])
 
       linker = Linker.new(config: config)
@@ -155,7 +155,7 @@ module RokuBuilder
       config, options = build_config_options_objects(LinkerTest, options, false)
 
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, device, no_lock: false)
       @device_manager.expect(:release_device, nil, [device])
 
       linker = Linker.new(config: config)
@@ -171,7 +171,7 @@ module RokuBuilder
       config, options = build_config_options_objects(LinkerTest, options, false)
 
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, device, no_lock: false)
       @device_manager.expect(:release_device, nil, [device])
 
       linker = Linker.new(config: config)
@@ -194,7 +194,7 @@ module RokuBuilder
       config, options = build_config_options_objects(LinkerTest, options, false)
 
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, device, no_lock: false)
       @device_manager.expect(:release_device, nil, [device])
 
       linker = Linker.new(config: config)

@@ -55,7 +55,7 @@ module RokuBuilder
         sleep(0.1)
         "q"
       }
-      @device_manager.expect(:reserve_device, @device, [{no_lock: true}])
+      @device_manager.expect(:reserve_device, @device, no_lock: true)
       @device_manager.expect(:release_device, nil, [@device])
 
       RokuBuilder.stub(:device_manager, @device_manager) do
@@ -81,7 +81,7 @@ module RokuBuilder
         sleep(0.1)
         "q"
       }
-      @device_manager.expect(:reserve_device, @device, [{no_lock: true}])
+      @device_manager.expect(:reserve_device, @device, no_lock: true)
       @device_manager.expect(:release_device, nil, [@device])
 
       RokuBuilder.stub(:device_manager, @device_manager) do
@@ -123,7 +123,7 @@ module RokuBuilder
           "q"
         end
       }
-      @device_manager.expect(:reserve_device, @device, [{no_lock: true}])
+      @device_manager.expect(:reserve_device, @device, no_lock: true)
       @device_manager.expect(:release_device, nil, [@device])
 
       RokuBuilder.stub(:device_manager, @device_manager) do

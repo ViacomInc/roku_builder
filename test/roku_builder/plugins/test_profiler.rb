@@ -28,7 +28,7 @@ module RokuBuilder
       options = {profile: "stats"}
       config, options = build_config_options_objects(ProfilerTest, options, false)
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      @device_manager.expect(:reserve_device, device, no_lock: true)
       @device_manager.expect(:release_device, nil, [device])
 
       waitfor = Proc.new do |telnet_config, &blk|
@@ -67,7 +67,7 @@ module RokuBuilder
       options = {profile: "stats"}
       config, options = build_config_options_objects(ProfilerTest, options, false)
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      @device_manager.expect(:reserve_device, device, no_lock: true)
       @device_manager.expect(:release_device, nil, [device])
 
       waitfor = Proc.new do |telnet_config, &blk|
@@ -98,7 +98,7 @@ module RokuBuilder
       options = {profile: "all"}
       config, options = build_config_options_objects(ProfilerTest, options, false)
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      @device_manager.expect(:reserve_device, device, no_lock: true)
       @device_manager.expect(:release_device, nil, [device])
 
       waitfor = Proc.new do |telnet_config, &blk|
@@ -129,7 +129,7 @@ module RokuBuilder
       options = {profile: "roots"}
       config, options = build_config_options_objects(ProfilerTest, options, false)
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      @device_manager.expect(:reserve_device, device, no_lock: true)
       @device_manager.expect(:release_device, nil, [device])
 
       waitfor = Proc.new do |telnet_config, &blk|
@@ -159,7 +159,7 @@ module RokuBuilder
       options = {profile: "nodeId"}
       config, options = build_config_options_objects(ProfilerTest, options, false)
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      @device_manager.expect(:reserve_device, device, no_lock: true)
       @device_manager.expect(:release_device, nil, [device])
 
       waitfor = Proc.new do |telnet_config, &blk|
@@ -189,7 +189,7 @@ module RokuBuilder
       options = {profile: "images"}
       config, options = build_config_options_objects(ProfilerTest, options, false)
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      @device_manager.expect(:reserve_device, device, no_lock: true)
       @device_manager.expect(:release_device, nil, [device])
 
       waitfor = Proc.new do |telnet_config, &blk|
@@ -221,7 +221,7 @@ module RokuBuilder
       options = {profile: "memmory"}
       config, options = build_config_options_objects(ProfilerTest, options, false)
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      @device_manager.expect(:reserve_device, device, no_lock: true)
       @device_manager.expect(:release_device, nil, [device])
 
       waitfor = Proc.new do |telnet_config, &blk|
@@ -275,7 +275,7 @@ module RokuBuilder
       options = {profile: "textures"}
       config, options = build_config_options_objects(ProfilerTest, options, false)
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      @device_manager.expect(:reserve_device, device, no_lock: true)
       @device_manager.expect(:release_device, nil, [device])
 
       waitfor = Proc.new do |telnet_config, &blk|
@@ -310,7 +310,7 @@ module RokuBuilder
       options = {devlog: "rendezvous", devlog_function: "on"}
       config, options = build_config_options_objects(ProfilerTest, options, false)
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      @device_manager.expect(:reserve_device, device, no_lock: true)
       @device_manager.expect(:release_device, nil, [device])
 
       connection = Minitest::Mock.new
@@ -330,7 +330,7 @@ module RokuBuilder
       options = {sgperf: true}
       config, options = build_config_options_objects(ProfilerTest, options, false)
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      @device_manager.expect(:reserve_device, device, no_lock: true)
       @device_manager.expect(:release_device, nil, [device])
 
       profiler = Profiler.new(config: config)
@@ -383,7 +383,7 @@ module RokuBuilder
       options = {sgperf: true}
       config, options = build_config_options_objects(ProfilerTest, options, false)
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: true}])
+      @device_manager.expect(:reserve_device, device, no_lock: true)
       @device_manager.expect(:release_device, nil, [device])
 
       profiler = Profiler.new(config: config)

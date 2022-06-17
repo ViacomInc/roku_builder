@@ -41,7 +41,7 @@ module RokuBuilder
       @connection.expect(:puts, nil, ["cont\n"])
 
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, device, no_lock: false)
       @device_manager.expect(:release_device, nil, [device])
 
       RokuBuilder.stub(:device_manager, @device_manager) do
@@ -65,7 +65,7 @@ module RokuBuilder
       @connection.expect(:puts, nil, ["cont\n"])
 
       device = RokuBuilder::Device.new("roku", config.raw[:devices][:roku])
-      @device_manager.expect(:reserve_device, device, [{no_lock: false}])
+      @device_manager.expect(:reserve_device, device, no_lock: false)
       @device_manager.expect(:release_device, nil, [device])
 
       RokuBuilder.stub(:device_manager, @device_manager) do

@@ -48,7 +48,6 @@ module RokuBuilder
           f.request :multipart
           f.request :url_encoded
           f.adapter Faraday.default_adapter
-          f.proxy = "http://localhost:8888"
         end
         block.call(connection)
       end

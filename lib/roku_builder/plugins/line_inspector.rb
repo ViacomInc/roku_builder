@@ -47,17 +47,38 @@ module RokuBuilder
             match  = nil
             start = 0
             loop do
-              if line_inspector[:case_sensitive]
-                match = /#{line_inspector[:regex]}/.match(to_check, start)
-              else
-                match = /#{line_inspector[:regex]}/i.match(to_check, start)
-              end
-              if match
-                start = match.end(0)
-                line_number = to_check[0..match.begin(0)].split("\n", -1).count - 1
-                unless lines_to_ignore.include?(line_number)
-                  add_warning(inspector: line_inspector, file: file_path, line: line_number, match: match)
+              stop = to_check.length-1
+              pass_match = nil
+              if line_inspector[:pass_if_match]
+                if line_inspector[:case_sensitive]
+                  pass_match = /#{line_inspector[:pass_test_regexp]}/.match(to_check[start..stop])
+                else
+                  pass_match = /#{line_inspector[:pass_test_regexp]}/i.match(to_check[start..stop])
                 end
+                break unless pass_match
+                stop = to_check.index("\n", start)
+                stop ||= to_check.length-1
+              end
+              if line_inspector[:case_sensitive]
+                match = /#{line_inspector[:regex]}/.match(to_check[start..stop])
+              else
+                match = /#{line_inspector[:regex]}/i.match(to_check[start..stop])
+              end
+              if (not line_inspector[:pass_if_match] and match) or (line_inspector[:pass_if_match] and not match)
+                error_match = match
+                if match
+                  start = match.end(0)
+                  line_number = to_check[0..match.begin(0)].split("\n", -1).count - 1
+                else
+                  error_match = pass_match
+                  line_number = to_check[0..start].split("\n", -1).count - 1
+                  start = stop
+                end
+                unless lines_to_ignore.include?(line_number)
+                  add_warning(inspector: line_inspector, file: file_path, line: line_number, match: error_match)
+                end
+              elsif line_inspector[:pass_if_match]
+                start = stop +1
               else
                 break
               end

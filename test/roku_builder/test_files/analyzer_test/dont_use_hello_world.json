@@ -1,0 +1,11 @@
+{
+  "is_ssai": true,
+  "rules": [
+    {
+      "regex": "hello world",
+      "case_sensitive": true,
+      "severity": "warning",
+      "message": "dont use hello world"
+    }
+  ]
+}

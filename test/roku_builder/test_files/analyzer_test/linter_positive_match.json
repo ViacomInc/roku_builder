@@ -1,0 +1,13 @@
+{
+  "is_ssai": true,
+  "rules": [
+    {
+      "pass_if_match": true,
+      "pass_test_regexp": "hello",
+      "regex": "hello world",
+      "case_sensitive": true,
+      "severity": "warning",
+      "message": "dont use hello world"
+    }
+  ]
+}

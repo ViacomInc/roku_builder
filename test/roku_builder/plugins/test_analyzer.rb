@@ -26,6 +26,8 @@ module RokuBuilder
     def teardown
       manifest = File.join(@root_dir, "manifest")
       FileUtils.rm(manifest) if File.exist?(manifest)
+      linter_config = File.join(@root_dir, ".roku_builder_linter.json")
+      FileUtils.rm(linter_config) if File.exist?(linter_config)
       @request_stubs.each {|req| remove_request_stub(req)}
     end
     def test_analyzer_parse_commands
@@ -100,9 +102,26 @@ module RokuBuilder
       warnings = test_file(text: "For each button in buttons\n ? button\nEND FOR")
       assert_equal 0, warnings.count
     end
+    def test_linter_checks
+      set_linter_config("dont_use_hello_world.json")
+      warnings = test_file(text: "hello world")
+      assert_equal 1, warnings.count
+    end
+    def test_linter_positive_match
+      set_linter_config("linter_positive_match.json")
+      warnings = test_file(text: "hello world\nhello moon")
+      assert_equal 1, warnings.count
+      assert_equal 1, warnings.first[:line]
+    end
 
 
     private
+
+    def set_linter_config(config_file = nil)
+      if config_file
+        FileUtils.cp(File.join(@root_dir, config_file), File.join(@root_dir, ".roku_builder_linter.json"))
+      end
+    end
 
     def test_manifest(manifest_file = nil)
       if manifest_file

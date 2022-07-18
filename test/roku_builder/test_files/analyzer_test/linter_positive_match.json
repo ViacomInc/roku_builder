@@ -7,7 +7,7 @@
       "regex": "hello world",
       "case_sensitive": true,
       "severity": "warning",
-      "message": "dont use hello world"
+      "message": "only use hello world, no other hello"
     }
   ]
 }

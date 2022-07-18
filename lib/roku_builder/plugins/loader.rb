@@ -59,7 +59,11 @@ module RokuBuilder
       keep_build_file = is_build_command(options) and options[:out]
       upload(options: options, device: device)
       # Cleanup
-      File.delete(file_path(:in)) if did_build and not keep_build_file
+      begin
+        File.delete(file_path(:in)) if did_build and not keep_build_file
+      rescue Errno::EACCES
+        @logger.warn "Unable to delete: " + file_path(:in)
+      end
     end
 
 
@@ -90,10 +94,13 @@ module RokuBuilder
     end
 
     # Convert sideloaded app to squashfs
-    def squash(options:, ignoreFailure: false)
-      payload =  {mysubmit: "Convert to squashfs", archive: ""}
+    def squash(options:, device: nil, ignoreFailure: false)
+      payload =  {
+        mysubmit: "Convert to squashfs",
+        archive: make_param("", "application/octet-stream")
+      }
       response = nil
-      multipart_connection do |conn|
+      multipart_connection(device: device) do |conn|
         response = conn.post "/plugin_install", payload
       end
       unless response.status == 200 and response.body =~ /Conversion succeeded/ or ignoreFailure
@@ -125,7 +132,7 @@ module RokuBuilder
       end
       @logger.debug("Status: #{response.status}, Body: #{response.body}")
       if response.status==200 and response.body=~/Identical to previous version/
-        @logger.warn("Sideload identival to previous version")
+        @logger.warn("Sideload identical to previous version")
       elsif not (response.status==200 and response.body=~/Install Success/)
         raise ExecutionError, "Failed Sideloading"
       end

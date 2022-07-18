@@ -14,7 +14,7 @@ module RokuBuilder
       message = "No Devices Found"
       if @options[:device]
         device = Device.new(@options[:device], @config.raw[:devices][@options[:device].to_sym])
-        return device if device_avaiable!(device: device, no_lock: no_lock)
+        return device if device_available!(device: device, no_lock: no_lock)
         message = "Device #{@options[:device]} not found"
       else
         begin
@@ -47,14 +47,14 @@ module RokuBuilder
       all_devices.unshift(default)
       all_devices.each do |device_name|
         device = Device.new(device_name, @config.devices[device_name])
-        if device_avaiable!(device: device, no_lock: no_lock)
+        if device_available!(device: device, no_lock: no_lock)
           return device
         end
       end
       nil
     end
 
-    def device_avaiable!(device:, no_lock: false)
+    def device_available!(device:, no_lock: false)
       return false unless device_ping?(device)
       return true if no_lock
       file = lock_file(device)
@@ -78,7 +78,7 @@ module RokuBuilder
     end
 
     def lock_file(device)
-      File.open(File.join(Dir.tmpdir, device.name), "a+")
+      File.open(File.join(Dir.tmpdir, device.name), File::RDWR | File::APPEND | File::CREAT | File::BINARY | File::SHARE_DELETE) #"a+")
     end
 
   end

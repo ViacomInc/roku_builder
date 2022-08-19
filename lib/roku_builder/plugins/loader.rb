@@ -103,7 +103,7 @@ module RokuBuilder
       multipart_connection(device: device) do |conn|
         response = conn.post "/plugin_install", payload
       end
-      unless response.status == 200 and response.body =~ /Conversion succeeded/ or ignoreFailure
+      unless response.status == 200 and response.body =~ /squashfs file in internal memory/ or ignoreFailure
         raise ExecutionError, "Failed Converting to Squashfs"
       end
     end
@@ -160,11 +160,13 @@ module RokuBuilder
     end
 
     def build_zip(content)
-      path = file_path(:out)
-      File.delete(path) if File.exist?(path)
-      io = Zip::File.open(path, Zip::File::CREATE)
+      tmp_path = File.join(build_dir, SecureRandom.uuid+".zip")
+      io = Zip::File.open(tmp_path, Zip::File::CREATE)
       writeEntries(build_dir, content[:source_files], "", content[:excludes], io)
       io.close()
+      path = file_path(:out)
+      File.delete(path) if File.exist?(path)
+      FileUtils.mv(tmp_path, path)
     end
 
     # Recursively write directory contents to a zip archive

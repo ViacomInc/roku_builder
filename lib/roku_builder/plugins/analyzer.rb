@@ -40,7 +40,7 @@ module RokuBuilder
       loader = Loader.new(config: @config)
       Dir.mktmpdir do |dir|
         loader.copy(options: options, path: dir)
-        run_sca_tool(path: dir, ssai: linter_config[:is_ssai])
+        run_sca_tool(path: dir, linter_config: linter_config)
         libraries = @config.project[:libraries]
         libraries ||= []
         Dir.glob(File.join(dir, "**", "*")).each do |file_path|
@@ -63,7 +63,7 @@ module RokuBuilder
 
     private
 
-    def run_sca_tool(path:, ssai:)
+    def run_sca_tool(path:, linter_config:)
       if OS.unix?
         command = File.join(File.dirname(__FILE__), "sca-cmd", "bin", "sca-cmd")
         stderr = "/dev/null"
@@ -73,20 +73,20 @@ module RokuBuilder
       end
       @logger.debug("Command: '#{command}'")
       results = `#{command} #{path} 2>#{stderr}`.split("\n")
-      process_sca_results(results, ssai)
+      process_sca_results(results, linter_config)
     end
 
-    def process_sca_results(results, ssai)
+    def process_sca_results(results, linter_config)
       results.each do |result_line|
         if /-----+/.match(result_line) or /\*\*\*\*\*+/.match(result_line)
-          @warnings.push(@sca_warning) if add_warning?(ssai)
+          @warnings.push(@sca_warning) if add_warning?(linter_config)
           @sca_warning = {}
         elsif data = /^(\[WARNING\]|\[INFO\]|\[ERROR\])(.*)$/.match(result_line)
-          @warnings.push(@sca_warning) if add_warning?(ssai)
+          @warnings.push(@sca_warning) if add_warning?(linter_config)
           @sca_warning = {}
           @sca_warning[:severity] = data[1].gsub(/(\[|\])/, "").downcase
           @sca_warning[:message] = data[2]
-        elsif data = /^\sPath: ([^ ]*) Line: (\d*)./.match(result_line)
+        elsif data = /^\s*Path: ([^ ]*) Line: (\d*)./.match(result_line)
           @sca_warning[:path] = data[1]+":"+data[2]
         elsif @sca_warning and  @sca_warning[:message]
           @sca_warning[:message] += " " + result_line
@@ -94,15 +94,20 @@ module RokuBuilder
       end
     end
 
-    def add_warning?(ssai)
+    def add_warning?(linter_config)
       if @sca_warning and @sca_warning[:severity]
-        if ssai and /SetAdUrl\(\) method is missing/.match(@sca_warning[:message])
+        if linter_config[:ssai] and /SetAdUrl\(\) method is missing/.match(@sca_warning[:message])
           return false
         end
         libraries = @config.project[:libraries]
         libraries ||= []
         if @sca_warning[:path] and libraries.any_is_start?(@sca_warning[:path].gsub(/pkg:/, "")) and not @options[:include_libraries]
           return false
+        end
+        if linter_config[:ignore_warnings]
+          linter_config[:ignore_warnings].each do |regexp|
+            return false if @sca_warning[:message] =~ /#{regexp}/
+          end
         end
         return true
       end

@@ -67,8 +67,8 @@ module RokuBuilder
               if (not line_inspector[:pass_if_match] and match) or (line_inspector[:pass_if_match] and not match)
                 error_match = match
                 if match
-                  start = match.end(0)
-                  line_number = to_check[0..match.begin(0)].split("\n", -1).count - 1
+                  line_number = to_check[0..match.begin(0)+start].split("\n", -1).count - 1
+                  start = match.end(0) + start
                 else
                   error_match = pass_match
                   line_number = to_check[0..start].split("\n", -1).count - 1

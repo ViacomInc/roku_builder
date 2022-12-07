@@ -78,7 +78,7 @@ module RokuBuilder
                   add_warning(inspector: line_inspector, file: file_path, line: line_number, match: error_match)
                 end
               elsif line_inspector[:pass_if_match]
-                start = stop +1
+                start = stop + 1
               else
                 break
               end

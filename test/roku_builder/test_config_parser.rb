@@ -345,5 +345,39 @@ module RokuBuilder
       assert_equal tmp_folder, parsed[:out][:folder]
       assert_equal "file.jpg", parsed[:out][:file]
     end
+    def test_outfile_config_config_out
+      config = good_config(ConfigParserTest)
+      config[:out] = "/home/user"
+      options = build_options({validate: true, working: true, out: nil})
+      parsed = ConfigParser.parse(options: options, config: config)
+
+      refute_nil parsed[:out]
+      refute_nil parsed[:out][:folder]
+      assert_nil parsed[:out][:file]
+      assert_equal "/home/user", parsed[:out][:folder]
+    end
+    def test_outfile_config_config_out_file
+      config = good_config(ConfigParserTest)
+      config[:out] = "/home/user/file.pkg"
+      options = build_options({validate: true, working: true, out: nil})
+      parsed = ConfigParser.parse(options: options, config: config)
+
+      refute_nil parsed[:out]
+      refute_nil parsed[:out][:folder]
+      refute_nil parsed[:out][:file]
+      assert_equal "/home/user", parsed[:out][:folder]
+      assert_equal "file.pkg", parsed[:out][:file]
+    end
+    def test_outfile_config_config_and_option_out
+      config = good_config(ConfigParserTest)
+      config[:out] = "/home/user"
+      options = build_options({validate: true, working: true, out: "/home/user2"})
+      parsed = ConfigParser.parse(options: options, config: config)
+
+      refute_nil parsed[:out]
+      refute_nil parsed[:out][:folder]
+      assert_nil parsed[:out][:file]
+      assert_equal "/home/user2", parsed[:out][:folder]
+    end
   end
 end

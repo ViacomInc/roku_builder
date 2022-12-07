@@ -83,24 +83,30 @@ module RokuBuilder
     def setup_in_out_file
       [:in, :out].each do |type|
         @parsed[type] = {file: nil, folder: nil}
-        if @options[type]
+        if user_file(type)
           if file_defined?(type)
             setup_file_and_folder(type)
-          elsif @options[type]
-            @parsed[type][:folder] = File.expand_path(@options[type])
+          elsif user_file(type)
+            @parsed[type][:folder] = File.expand_path(user_file(type))
           end
         end
       end
       set_default_outfile
     end
 
+    def user_file(type)
+      file = @options[type]
+      file ||= @config[type]
+      file
+    end
+
     def file_defined?(type)
-      @options[type].end_with?(".zip") or @options[type].end_with?(".pkg") or @options[type].end_with?(".jpg")
+      user_file(type).end_with?(".zip") or user_file(type).end_with?(".pkg") or user_file(type).end_with?(".jpg")
     end
 
     def setup_file_and_folder(type)
-      @parsed[type][:folder], @parsed[type][:file] = Pathname.new(@options[type]).split.map{|p| p.to_s}
-      if @parsed[type][:folder] == "." and not @options[type].start_with?(".")
+      @parsed[type][:folder], @parsed[type][:file] = Pathname.new(user_file(type)).split.map{|p| p.to_s}
+      if @parsed[type][:folder] == "." and not user_file(type).start_with?(".")
         @parsed[type][:folder] = nil
       else
         @parsed[type][:folder] = File.expand_path(@parsed[type][:folder])

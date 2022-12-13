@@ -87,7 +87,8 @@ module RokuBuilder
           @sca_warning[:severity] = data[1].gsub(/(\[|\])/, "").downcase
           @sca_warning[:message] = data[2]
         elsif data = /^\s*Path: ([^ ]*) Line: (\d*)./.match(result_line)
-          @sca_warning[:path] = data[1]+":"+data[2]
+          @sca_warning[:path] = data[1]
+          @sca_warning[:line] = data[2].to_i
         elsif @sca_warning and  @sca_warning[:message]
           @sca_warning[:message] += " " + result_line
         end

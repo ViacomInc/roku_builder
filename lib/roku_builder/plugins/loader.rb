@@ -51,6 +51,18 @@ module RokuBuilder
 
     # Sideload an app onto a roku device
     def sideload(options:, device: nil)
+      if !options[:logfile].nil?
+        if options[:logfile].match("config")
+          options[:logfile] = @config.console_log
+        end
+        if options[:clearfile]
+          if !options[:logfile].nil?
+            File.delete(options[:logfile]) if File.exist?(options[:logfile])
+          else
+            @logger.unknown "Cannot clear, console_log file not set."
+          end
+        end
+      end
       did_build = false
       unless options[:in]
         did_build = true

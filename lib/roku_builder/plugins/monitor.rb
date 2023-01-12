@@ -33,6 +33,26 @@ module RokuBuilder
     # Monitor a development log on the Roku device
     def monitor(options:)
       get_device(no_lock: true) do |device|
+        if !options[:logfile].nil?
+          if options[:logfile].match("config")
+            options[:logfile] = @config.console_log
+          end
+          if options[:clearfile]
+            if !options[:logfile].nil?
+              File.delete(options[:logfile]) if File.exist?(options[:logfile])
+            else
+              @logger.unknown "Cannot clear, console_log file not set."
+            end
+          end
+        end
+        if options[:logging]
+          if !options[:logfile].nil?
+            @logger.unknown "Logging to: " + options[:logfile]
+          else
+            @logger.unknown "Cannot log, console_log file not set."
+            options[:logging] = false
+          end
+        end
         type = options[:monitor].to_sym
         telnet_config = { 'Host' => device.ip, 'Port' => @ports[type] }
         waitfor_config = { 'Match' => /./, 'Timeout' => false }
@@ -44,7 +64,7 @@ module RokuBuilder
           all_text = ""
           while true
             connection.waitfor(waitfor) do |txt|
-              all_text = manage_text(all_text: all_text, txt: txt, regexp: options[:regexp])
+              all_text = manage_text(all_text: all_text, txt: txt, regexp: options[:regexp], logging: options[:logging], logfile: options[:logfile])
             end
           end
         }
@@ -115,7 +135,7 @@ module RokuBuilder
     #  @param txt [String] current string from telnet
     #  @param regexp [Regexp] regular expression to filter text on
     #  @return [String] remaining partial line text
-    def manage_text(all_text:, txt:, regexp: nil)
+    def manage_text(all_text:, txt:, regexp: nil, logging: false, logfile:)
       raise ExecutionError, "Connection Closed" unless txt
       if /connection is already in use/ =~ txt
         raise ExecutionError, "Connection is in use"
@@ -124,6 +144,11 @@ module RokuBuilder
       while line = all_text.slice!(/^.*\n/) do
         if !line.strip.empty?
           puts line if regexp.nil? or line.match(regexp)
+          if logging
+            open(logfile, 'a') do |f|
+              f.puts line
+            end
+          end
         end
       end
 

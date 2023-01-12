@@ -59,6 +59,14 @@ module RokuBuilder
       end
       parser.separator ""
       parser.separator "Other Options:"
+      parser.on("-L", "--console_log [FILE]", "Save monitor logs in file") do |l|
+        options[:logfile] = l || "config"
+        options[:logging] = true
+      end
+      parser.on("-C", "--clear_log [FILE]", "Clear saved monitor logs in file") do |l|
+        options[:logfile] = l || "config"
+        options[:clearfile] = true
+      end
       parser.on("-O", "--out PATH", "Output file/folder. If PATH ends in .pkg/.zip/.jpg, file is assumed, otherwise folder is assumed") do |o|
         options[:out] = o
       end

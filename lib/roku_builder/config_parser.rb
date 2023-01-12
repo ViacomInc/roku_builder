@@ -29,6 +29,7 @@ module RokuBuilder
       setup_key_config
       setup_root_dir
       setup_input_mappings
+      setup_console_log
     end
 
     def process_in_argument
@@ -211,6 +212,10 @@ module RokuBuilder
 
     def setup_input_mappings
       @parsed[:input_mappings] = @config[:input_mappings]
+    end
+
+    def setup_console_log
+      @parsed[:console_log] = @config[:console_log]
     end
   end
 end

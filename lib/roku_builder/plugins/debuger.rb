@@ -23,29 +23,30 @@ module RokuBuilder
     def debug(options:)
       loader = Loader.new(config: @config)
       options[:remoteDebug] = true
-      loader.sideload(options: options)
+      @device = RokuBuilder.device_manager.reserve_device()
+      loader.sideload(options: options, device: @device)
       begin
         @stopped = false
         initial_continue = false
-        @lock = Mutex.new
         @queue = Queue.new
-        start_socket_monitor
+        start_socket
         start_input_monitor
         loop do
-          event = @queue.pop
-          case event[:type]
-          when :logging
-            @logger.unknown event[:value]
-          when :socket
-            process_response event[:value]
-          when :input
-            process_command event[:value]
+          begin 
+            event = @queue.pop(true)
+            case event[:type]
+            when :logging
+              @logger.unknown event[:value]
+            when :input
+              process_command event[:value]
+            end
+          rescue ThreadError
           end
+          response = get_socket_response()
+          process_response(response) if response
           if @stopped and not initial_continue
             initial_continue = true
-            @lock.synchronize do
-              @socket.send_command(:continue)
-            end
+            @socket.send_command(:continue)
           end
         end
       rescue IOError => e
@@ -54,32 +55,37 @@ module RokuBuilder
         @logger.info "Connection Reset #{e.message}"
       rescue Errno::ETIMEDOUT => e
         @logger.info "Connection Reset #{e.message}"
+      rescue Errno::ECONNREFUSED => e
+        @logger.info "Connection Refused #{e.message}"
+      ensure
+        RokuBuilder.device_manager.release_device(@device) if @device
       end
     end
 
-    def start_socket_monitor
+    def start_socket
       @logger.debug "Monitoring Socket"
-      @socket = RokuDebugSocket.open(@roku_ip_address, 8081, @logger)
+      start_time = DateTime.now.to_time.to_i
+      loop do
+        begin
+          @socket = RokuDebugSocket.open(@device.ip, 8081, @logger)
+          break
+        rescue Errno::ECONNREFUSED
+          duration = DateTime.now.to_time.to_i - start_time
+          raise Errno::ECONNRESET if duration > 60
+        end
+      end
       @logger.unknown "Started Connection"
       @socket.do_handshake
-      socket_thread = Thread.new(@socket, @queue) { |socket,queue|
-        loop do
-          begin
-            response = nil
-            @lock.synchronize do
-              response = socket.get_response
-            end
-            if response[:request_id]
-              queue.push({
-                type: :socket,
-                value: response
-              })
-            end
-          rescue IO::WaitReadable
-            #Do nothing
-          end
-        end
-      }
+    end
+
+    def get_socket_response
+      response = nil
+      begin
+        response = @socket.get_response
+      rescue IO::WaitReadable
+        #Do nothing
+      end
+      response
     end
 
     def start_input_monitor
@@ -87,10 +93,12 @@ module RokuBuilder
       input_thread = Thread.new(@queue) { |queue|
         loop do
           command = gets
-          queue.push({
-            type: :input,
-            value: command.downcase.chomp
-          })
+          unless command.empty?
+            queue.push({
+              type: :input,
+              value: command.downcase.chomp
+            })
+          end
         end
       }
     end
@@ -109,6 +117,10 @@ module RokuBuilder
           @logger.debug "Thread Attached"
           @logger.debug " --- reason: #{response[:data][:stop_reason]}"
           @logger.debug " --- detail: #{response[:data][:stop_reason_detail]}"
+        when 4
+          @logger.debug "Breakpoint Error"
+        when 5
+          @logger.debug "Compile Error"
         end
       else
         @logger.debug "Command Response"
@@ -137,7 +149,7 @@ module RokuBuilder
 
     def open_logger(port)
       @logger.debug "Opening Logging Port"
-      io_logger = TCPSocket.open(@roku_ip_address, port)
+      io_logger = TCPSocket.open(@device.ip, port)
       io_logger_thread = Thread.new(io_logger, @queue) { |socket,queue|
         text = ""
         loop do
@@ -160,24 +172,19 @@ module RokuBuilder
     end
 
     def process_command(command)
+      byebug
       case command
       when "s", "stop"
         @logger.debug "Sending Stop"
-        @lock.synchronize do
-          @socket.send_command(:stop)
-        end
+        @socket.send_command(:stop)
       when "c", "continue"
         @logger.debug "Sending Continue"
         @threads = nil
-        @lock.synchronize do
-          @socket.send_command(:continue)
-        end
+        @socket.send_command(:continue)
       when "t", "threads"
         if @stopped
           @logger.debug "Sending Threads"
-          @lock.synchronize do
-            @socket.send_command(:threads)
-          end
+          @socket.send_command(:threads)
         else
           @logger.warn "Must be stopped to use that command"
         end
@@ -191,9 +198,7 @@ module RokuBuilder
       when /stacktrace (\d+)/
         thread = @threads[$1.to_i]
         if @threads and thread
-          @lock.synchronize do
-            @socket.send_command(:stacktrace, {thread_index: $1.to_i})
-          end
+          @socket.send_command(:stacktrace, {thread_index: $1.to_i})
         else
           @logger.error "Unknown Thread #{$1}"
         end
@@ -206,207 +211,4 @@ module RokuBuilder
 
   RokuBuilder.register_plugin(Debugger)
 
-  class RokuDebugSocket < TCPSocket
-
-    MAGIC = 29120988069524322
-
-    def initialize(ip, port, logger)
-      super ip, port
-      @logger = logger
-      @request_id = 1
-      @active_requests = {}
-    end
-
-    def do_handshake
-      send_uint64(MAGIC)
-      raise SocketError, 'Non-matching Magic Numbers' unless MAGIC == read_uint64
-      version = [read_uint32(), read_uint32(), read_uint32()]
-      raise IOError, "Unsupported Version" unless support_version?(version)
-    end
-
-    def get_response
-      response = {}
-      response[:request_id] = read_uint32(true)
-      @logger.debug "Recieved Response #{response[:request_id]}"
-      if response[:request_id] == 0
-        response[:error_code] = read_uint32
-        response[:update_type] = read_uint32
-        case response[:update_type]
-        when 0
-          raise IOError, "Undefined Update Type"
-        when 1
-          response[:data] = read_uint32
-        when 2..3
-          data = {}
-          data[:primary_thread_index] = read_int32
-          data[:stop_reason] = read_uint8
-          data[:stop_reason_detail] = read_utf8z
-          response[:data] = data
-        end
-      elsif @active_requests[response[:request_id].to_s]
-        response[:error_code] = read_uint32
-        response[:command] = @active_requests[response[:request_id].to_s]
-        response[:data] = get_data(response[:command])
-        @active_requests.delete response[:request_id].to_s
-      elsif response[:request_id] != nil
-        raise IOError, "Unknown request id: #{response[:request_id]}"
-      end
-      response
-    end
-
-    def send_command(command, params = nil)
-      @logger.debug "Sending Command: #{command}"
-      commands = {
-        stop: 1,
-        continue: 2,
-        threads: 3,
-        stacktrace: 4
-      }
-      size = get_size(command)
-      send_uint32(size)
-      send_uint32(@request_id)
-      send_uint32(commands[command])
-      send_params(command, params) if params
-      @active_requests[@request_id.to_s] = command
-      @request_id += 1
-    end
-
-    def get_text
-      read_utf8z
-    end
-
-    private
-
-    def get_size(command)
-      command_size = {
-        stop: 12,
-        continue: 12,
-        threads: 12,
-        stacktrace: 16
-      }
-      return command_size[command]
-    end
-
-    def send_params(command, params)
-      case command
-      when :stacktrace
-        if params[:thread_index]
-          send_uint32(params[:thread_index])
-        else
-          raise IOError, "Missing Param for 'stasktrace' command"
-        end
-      end
-    end
-
-    def get_data(command)
-      case command
-      when :stop
-        return nil
-      when :continue
-        return nil
-      when :threads
-        data = {
-          count: read_uint32,
-          threads: []
-        }
-        data[:count].times do
-          thread = {
-            flags: read_uint8,
-            stop_reason: read_uint32,
-            stop_reason_detail: read_utf8z,
-            line_number: read_uint32,
-            function_name: read_utf8z,
-            file_path: read_utf8z,
-            code_snippet: read_utf8z
-          }
-          data[:threads].push(thread)
-        end
-        return data
-      when :stacktrace
-        data = {
-          count: read_uint32,
-          stack: []
-        }
-        data[:count].times do
-          stack_entry = {
-            line_number: read_uint32,
-            function_name: read_utf8z,
-            file_name: read_utf8z
-          }
-          data[:stack].push(stack_entry)
-        end
-        return data
-      end
-    end
-
-    def send_uint64(val)
-      send([val].pack('Q'), 0)
-    end
-
-    def send_uint32(val)
-      send([val].pack('L'), 0)
-    end
-
-    def read_uint64(non_block = nil)
-      read(8, 'Q', non_block)
-    end
-
-    def read_int64(non_block = nil)
-      read(8, 'q', non_block)
-    end
-
-    def read_uint32(non_block = nil)
-      read(4, 'L', non_block)
-    end
-
-    def read_int32(non_block = nil)
-      read(4, 'l', non_block)
-    end
-
-    def read_uint8(non_block = nil)
-      read(1, 'C', non_block)
-    end
-
-    def read_int8(non_block = nil)
-      read(1, 'c', non_block)
-    end
-
-    def read(length, map, non_block = nil)
-      if non_block
-        value = recv_nonblock(length, Socket::MSG_PEEK)
-        check_value(value, length)
-        @logger.debug "READ VALUE: #{value.unpack("M")}"
-        return recv_nonblock(length).unpack(map).first
-      else
-        value = recv(length, Socket::MSG_PEEK)
-        check_value(value, length)
-        @logger.debug "READ VALUE: #{value.unpack("M")}"
-        return recv(length).unpack(map).first
-      end
-    end
-
-    def check_value(value, length)
-      unless value.length == length
-        raise IOError, "Unexpected EOF reading debug stream"
-      end
-    end
-
-    def read_utf8z
-      string = ""
-      loop do
-        char = recv(1)
-        break if char == "\0"
-        string += char
-      end
-      string
-    end
-
-    def support_version?(version)
-      supported_versions = [
-        [2, 0, 0],
-        [1, 0, 1]
-      ]
-      supported_versions.include?(version)
-    end
-  end
 end

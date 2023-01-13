@@ -137,7 +137,10 @@ module RokuBuilder
         mysubmit: "Replace",
         archive: Faraday::UploadIO.new(file_path(:in), 'application/zip'),
       }
-      payload["remotedebug"] = "1" if options[:remoteDebug]
+      if options[:remoteDebug]
+        payload["remotedebug"] = "1"
+        payload["remotedebug_connect_early"] = "1"
+      end
       response = nil
       multipart_connection(device: device) do |conn|
         response = conn.post "/plugin_install", payload

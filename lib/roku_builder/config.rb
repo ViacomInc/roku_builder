@@ -23,7 +23,8 @@ module RokuBuilder
       load_config
     end
 
-    def parse(stage: nil)
+    def parse(stage: nil, options: nil)
+      @options = options if options
       @options[:stage] = stage if stage
       @parsed = ConfigParser.parse(options: @options, config: @config)
     end

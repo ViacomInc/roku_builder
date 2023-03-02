@@ -82,7 +82,7 @@ module RokuBuilder
       get_device(device: device) do |device|
         oldId = dev_id(device: device)
 
-        raise ExecutionError, "Missing Key Config" unless @config.key
+        raise ExecutionError, "No Key Found For Stage #{options[:stage]}" unless @config.key
 
         # upload new key with password
         payload =  {

@@ -115,7 +115,7 @@ module RokuBuilder
       multipart_connection(device: device) do |conn|
         response = conn.post "/plugin_install", payload
       end
-      unless response.status == 200 and response.body =~ /squashfs file in internal memory/ or ignoreFailure
+      unless response.status == 200 and response.body =~ /Conversion succeeded/ or ignoreFailure
         raise ExecutionError, "Failed Converting to Squashfs"
       end
     end

@@ -135,7 +135,7 @@ module RokuBuilder
     #  @param txt [String] current string from telnet
     #  @param regexp [Regexp] regular expression to filter text on
     #  @return [String] remaining partial line text
-    def manage_text(all_text:, txt:, regexp: nil, logging: false, logfile:)
+    def manage_text(all_text:, txt:, regexp: nil, logging: false, logfile: nil)
       raise ExecutionError, "Connection Closed" unless txt
       if /connection is already in use/ =~ txt
         raise ExecutionError, "Connection is in use"

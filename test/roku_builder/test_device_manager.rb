@@ -39,7 +39,7 @@ module RokuBuilder
         @ping.expect(:ping?, false, [config.raw[:devices][:roku][:ip], 1, 0.2, 1])
         manager = DeviceManager.new(config: config, options: options)
         assert_raises(DeviceError) do
-          device = manager.reserve_device
+          manager.reserve_device
         end
       end
     end
@@ -50,9 +50,9 @@ module RokuBuilder
         @ping.expect(:ping?, true, [config.raw[:devices][:roku][:ip], 1, 0.2, 1])
         @ping.expect(:ping?, true, [config.raw[:devices][:roku][:ip], 1, 0.2, 1])
         manager = DeviceManager.new(config: config, options: options)
-        device1 = manager.reserve_device
+        manager.reserve_device
         assert_raises(DeviceError) do
-          device2 = manager.reserve_device
+          manager.reserve_device
         end
       end
     end
@@ -121,7 +121,7 @@ module RokuBuilder
         manager = DeviceManager.new(config: config, options: options)
         device1 = manager.reserve_device
         assert_raises(DeviceError) do
-          device2 = manager.reserve_device
+          manager.reserve_device
         end
         assert_equal "test2", device1.name
       end

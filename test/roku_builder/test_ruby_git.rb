@@ -10,12 +10,12 @@ class GitTest < Minitest::Test
 
     index = 1
     base.expect(:lib, lib)
+    base.expect(:lib, lib)
+    lib.expect(:stashes_all, [])
     lib.expect(:stash_pop, nil, [index])
 
     Dir.mktmpdir do |dir|
-      git = Git.init(File.join(dir, "git"))
-      stashes = git.branch.stashes
-      stashes.instance_variable_set(:@base, base)
+      stashes = Git::Stashes.new(base)
       stashes.pop(index)
     end
 
@@ -29,12 +29,12 @@ class GitTest < Minitest::Test
 
     index = 1
     base.expect(:lib, lib)
+    base.expect(:lib, lib)
+    lib.expect(:stashes_all, [])
     lib.expect(:stash_drop, nil, [index])
 
     Dir.mktmpdir do |dir|
-      git = Git.init(File.join(dir, "git"))
-      stashes = git.branch.stashes
-      stashes.instance_variable_set(:@base, base)
+      stashes = Git::Stashes.new(base)
       stashes.drop(index)
     end
 

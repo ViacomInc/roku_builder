@@ -153,11 +153,10 @@ module RokuBuilder
       logger.expect(severity, nil, [String])
 
       ::Logger.stub :new, logger do
-        warnings = test_file(text: text, quiet: false)
+        test_file(text: text, quiet: false)
       end
 
       logger.verify
-      warnings
     end
 
     def test(quiet=true)

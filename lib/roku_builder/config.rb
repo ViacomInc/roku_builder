@@ -127,7 +127,6 @@ module RokuBuilder
       if File.exist?(local_config_path) and !@loaded_configs.include?(File.expand_path(local_config_path))
         local_config_hash = read_config(File.open(local_config_path))
         add_missing_directories(local_config_hash)
-        local_sub_configs = "./.roku_config/*.json"
         @config = @config.deep_merge(local_config_hash)
         Dir.glob("./.roku_config/*.json").each do |sub_config_path|
           sub_config_hash = read_config(File.open(sub_config_path))

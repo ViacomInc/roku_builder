@@ -136,7 +136,7 @@ module RokuBuilder
     end
     def test_loader_squash
       @request_stubs.push(stub_request(:post, "http://#{@device_config[:ip]}/plugin_install").
-        to_return(status: 200, body: "squashfs file in internal memory", headers: {}))
+        to_return(status: 200, body: "Conversion succeeded", headers: {}))
       @device_manager.expect(:reserve_device, @device, no_lock: false)
       @device_manager.expect(:release_device, nil, [@device])
 

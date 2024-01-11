@@ -27,6 +27,8 @@ require "tmpdir"
 require "zip"
 #analyzer
 require "image_size"
+#rokuapi
+require "jwt"
 
 
 Dir.glob(File.join(File.dirname(__FILE__), "roku_builder", "*.rb")).each do |path|

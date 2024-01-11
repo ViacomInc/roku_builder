@@ -30,6 +30,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "nokogiri",            "~> 1.12"
   spec.add_dependency "win32-security",      "~> 0.5" # For windows compatibility
   spec.add_dependency "image_size",          "~> 2.0"
+  spec.add_dependency "jwt",                 "~> 2.7"
 
   spec.add_development_dependency "bundler",           "~> 2.0"
   spec.add_development_dependency "rake",              "~> 12.0"

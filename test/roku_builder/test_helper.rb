@@ -71,56 +71,65 @@ def tmp_folder()
   Dir.tmpdir()
 end
 
+def is_uuid?(uuid)
+  uuid_regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+  return true if uuid_regex.match?(uuid.to_s.downcase)
+  false
+end
+
 def good_config(klass=nil)
   root_dir = "/tmp"
   root_dir = test_files_path(klass) if klass
   {
     devices: {
-    default: :roku,
-    roku: {
-    ip: "192.168.0.100",
-    user: "user",
-    password: "password"
-  }
-  },
+      default: :roku,
+      roku: {
+        ip: "192.168.0.100",
+        user: "user",
+        password: "password"
+      }
+    },
     projects: {
-    default: :project1,
-    project1: {
-    directory: root_dir,
-    source_files: ["manifest", "images", "source"],
-    app_name: "<app name>",
-    stage_method: :git,
-    stages:{
-    production: {
-    branch: "production",
-    key: {
-    keyed_pkg: File.join(root_dir, "test.pkg"),
-    password: "password"
-  }
-  }
-  }
-  },
-    project2: {
-    directory: root_dir,
-    source_files: ["images","source","manifest"],
-    app_name: "<app name>",
-    stage_method: :script,
-    stages:{
-    production: {
-    script: {stage: "stage_script", unstage: "unstage_script"},
-    key: "a"
-  }
-  }
-  }
-  },
+      default: :project1,
+      project1: {
+        directory: root_dir,
+        source_files: ["manifest", "images", "source"],
+        app_name: "<app name>",
+        stage_method: :git,
+        stages:{
+          production: {
+            branch: "production",
+            key: {
+              keyed_pkg: File.join(root_dir, "test.pkg"),
+              password: "password"
+            }
+          }
+        }
+      },
+      project2: {
+        directory: root_dir,
+        source_files: ["images","source","manifest"],
+        app_name: "<app name>",
+        stage_method: :script,
+        stages:{
+          production: {
+            script: {stage: "stage_script", unstage: "unstage_script"},
+            key: "a"
+          }
+        }
+      }
+    },
     keys: {
-    a: {
-    keyed_pkg: File.join(root_dir, "test.pkg"),
-    password: "password"
-  }
-  },
+      a: {
+        keyed_pkg: File.join(root_dir, "test.pkg"),
+        password: "password"
+      }
+    },
     input_mappings: {
-    "a": ["home", "Home"]
-  }
+      "a": ["home", "Home"]
+    },
+    api_keys: {
+      key1: File.join(root_dir, "test_key.json")
+    }
   }
 end

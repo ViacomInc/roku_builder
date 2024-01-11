@@ -44,6 +44,22 @@ module RokuBuilder
       assert_equal File.join(Dir.pwd, "infile"), configs[:root_dir]
     end
 
+    def test_api_keys
+      options = build_options({
+        current: true,
+        validate: true
+      })
+      config = good_config(ConfigParserTest)
+      configs = nil
+      File.stub(:exist?, true) do
+        configs = ConfigParser.parse(options: options, config: config)
+      end
+
+      assert_kind_of Hash, configs
+      assert_kind_of Hash, configs[:api_keys]
+      assert_equal configs[:api_keys][:key1], File.join(test_files_path(ConfigParserTest), "test_key.json")
+    end
+
     def test_manifest_config_current
       options = build_options({
         current: true,

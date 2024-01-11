@@ -22,6 +22,7 @@ module RokuBuilder
     def parse_config
       process_in_argument
       setup_devices
+      setup_api_keys
       setup_project
       setup_in_out_file
       setup_project_config
@@ -39,6 +40,10 @@ module RokuBuilder
     def setup_devices
       @parsed[:device_default] = @config[:devices][:default]
       @parsed[:devices] = @config[:devices].select{|key, value| :default != key}
+    end
+
+    def setup_api_keys
+      @parsed[:api_keys] = @config[:api_keys]
     end
 
     def setup_project

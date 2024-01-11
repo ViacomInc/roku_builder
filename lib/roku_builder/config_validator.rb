@@ -26,7 +26,7 @@ module RokuBuilder
     KEY_MISSING_PATH          = 19
     KEY_MISSING_PASSWORD      = 20
     INVALID_MAPPING_INFO      = 21
-    #                         = 22
+    INVALID_API_KEY           = 22
     MISSING_STAGE_METHOD      = 23
 
     def initialize(config:)
@@ -63,7 +63,7 @@ module RokuBuilder
     def validate_config
       @codes = []
       validate_structure
-      [:projects, :devices, :keys, :input_mappings].each do |section|
+      [:projects, :devices, :keys, :input_mappings, :api_keys].each do |section|
         validate_section(section: section) if @config[section]
       end
       @codes.uniq!
@@ -170,6 +170,13 @@ module RokuBuilder
     def validate_input_mapping(input_mapping:)
       errors=[
         [INVALID_MAPPING_INFO, (input_mapping.count != 2)]
+      ]
+      process_errors(errors: errors)
+    end
+
+    def validate_api_key(api_key:)
+      errors = [
+        [INVALID_API_KEY, (api_key.class != String)]
       ]
       process_errors(errors: errors)
     end

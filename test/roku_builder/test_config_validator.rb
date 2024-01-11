@@ -216,5 +216,19 @@ module RokuBuilder
       validator = ConfigValidator.new(config: config)
       assert_equal [12], validator.instance_variable_get(:@codes)
     end
+
+    def test_config_validate_invalid_api_key
+      config = good_config
+      config[:api_keys][:key1] = nil
+      validator = ConfigValidator.new(config: config)
+      assert_equal [22], validator.instance_variable_get(:@codes)
+    end
+
+    def test_confif_validate_no_api_keys
+      config = good_config
+      config[:api_keys] = nil
+      validator = ConfigValidator.new(config: config)
+      assert_equal [0], validator.instance_variable_get(:@codes)
+    end
   end
 end

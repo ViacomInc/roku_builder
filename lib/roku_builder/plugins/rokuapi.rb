@@ -6,6 +6,8 @@ module RokuBuilder
   class RokuAPI < Util
     extend Plugin
 
+    HOST = "https://apipub.roku.com"
+
     def init
     end
 
@@ -38,8 +40,13 @@ module RokuBuilder
     end
 
     def submit(options:)
-      raise RokuBuilder::InvalidOptions "Missing channel id" unless options[:channel_id]
-      response = get_channel(options[:channel_id], options[:api_key])
+      raise RokuBuilder::InvalidOptions, "Missing channel id" unless options[:channel_id]
+      response = get_channel_versions(options[:channel_id], options[:api_key])
+      if response.first["channelState"] == "Unpublished"
+        update_channel_version(options[:channel_id])
+      else
+        create_channel_version(options[:channel_id])
+      end
     end
 
     def publish(options:)
@@ -47,16 +54,22 @@ module RokuBuilder
 
     private
     
-    def get_channel(channel, api_key)
-      path = "/external/channels/#{channel}"
-      api_get(path, api_key)
+    def get_channel_versions(channel, api_key)
+      path = "/external/channels/#{channel}/versions"
+      response = api_get(path, api_key)
+      JSON.parse(response.body)
+    end
+
+    def create_channel_version(channel)
+    end
+
+    def update_channel_version(channel)
     end
 
     def api_get(path, api_key)
-      host = "https://apipub.roku.com"
       api_path = "/developer/v1"
       service_urn = "urn:roku:cloud-services:chanprovsvc"
-      connection = Faraday.new(url: host) do |f|
+      connection = Faraday.new(url: HOST) do |f|
         f.adapter Faraday.default_adapter
       end
       connection.get(api_path+path) do |request|

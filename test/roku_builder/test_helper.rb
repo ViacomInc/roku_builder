@@ -133,3 +133,17 @@ def good_config(klass=nil)
     }
   }
 end
+
+def api_versions
+  [
+    {
+      "id":"5735B375-2607-435F-97AE-66954DC2A91F",
+      "channelState":"Published",
+      "appSize":1226192,
+      "channelId":722085,
+      "version":"1.4",
+      "minFirmwareVersion":0,
+      "minimumFirmwareVersionTextShort":"v2.5 b388"
+    }
+  ]
+end

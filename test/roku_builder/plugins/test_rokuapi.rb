@@ -10,6 +10,11 @@ module RokuBuilder
       RokuBuilder.setup_plugins
       register_plugins(RokuAPI)
       @config, @options = build_config_options_objects(RokuAPITest, {submit: true, channel_id: "1234", api_key: "key1"}, false)
+      @requests = []
+    end
+
+    def teardown
+      @requests.each {|req| remove_request_stub(req)}
     end
 
     def test_commands
@@ -53,6 +58,80 @@ module RokuBuilder
       assert_equal spec["serviceUrn"], urn
       assert_equal spec["httpMethod"], method
       assert_equal spec["path"], path
+    end
+
+    def test_api_get
+      api = RokuAPI.new(config: @config)
+      path = "/test/path"
+      api_key = "key1"
+      @requests.push(stub_request(:any, /apipub.roku.com.*/))
+      response = api.send(:api_get, path, api_key)
+      assert_requested(:get, "https://apipub.roku.com/developer/v1/test/path", headers: {
+        "Accept" => "application/json",
+        "Content-Type" => "application/json",
+        "Authorization" => /Bearer .*/
+      })
+    end
+
+    def test_get_channel_versions
+      api = RokuAPI.new(config: @config)
+      channel = "1234"
+      api_key = "key1"
+      response = Minitest::Mock.new
+      body = { "id" => "1234", "version" => "1.1"}
+      response.expect(:body, body.to_json)
+      get_proc = proc do |path, key|
+        assert_equal path, "/external/channels/#{channel}/versions"
+        assert_equal key, api_key
+        response
+      end
+      api.stub(:api_get, get_proc) do
+        result = api.send(:get_channel_versions, channel, api_key)
+        assert_equal result, body        
+      end
+    end
+
+    def test_submit_no_channel_id
+      api = RokuAPI.new(config: @config)
+      assert_raises RokuBuilder::InvalidOptions do
+        api.submit(options: {})
+      end
+    end
+
+    def test_submit_without_unpublished
+      api = RokuAPI.new(config: @config)
+      called = {}
+      updated = proc {called[:updated] = true}
+      created = proc {called[:created] = true}
+      @requests.push(stub_request(:any, "https://apipub.roku.com/developer/v1/external/channels/1234/versions").to_return(
+        body: api_versions.to_json
+      ))
+      api.stub(:create_channel_version, created) do
+        api.stub(:update_channel_version, updated) do
+          api.submit(options: @options)
+        end
+      end
+      assert called[:created]
+      assert_nil called[:updated]
+    end
+
+    def test_submit_with_unpublished
+      api = RokuAPI.new(config: @config)
+      called = {}
+      updated = proc {called[:updated] = true}
+      created = proc {called[:created] = true}
+      body = api_versions
+      body[0]["channelState"] = "Unpublished"
+      @requests.push(stub_request(:any, "https://apipub.roku.com/developer/v1/external/channels/1234/versions").to_return(
+        body: body.to_json
+      ))
+      api.stub(:create_channel_version, created) do
+        api.stub(:update_channel_version, updated) do
+          api.submit(options: @options)
+        end
+      end
+      assert called[:updated]
+      assert_nil called[:created]
     end
   end
 end

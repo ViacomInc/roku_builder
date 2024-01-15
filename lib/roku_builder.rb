@@ -29,6 +29,7 @@ require "zip"
 require "image_size"
 #rokuapi
 require "jwt"
+require "base64"
 
 
 Dir.glob(File.join(File.dirname(__FILE__), "roku_builder", "*.rb")).each do |path|

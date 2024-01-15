@@ -41,11 +41,12 @@ module RokuBuilder
 
     def submit(options:)
       raise RokuBuilder::InvalidOptions, "Missing channel id" unless options[:channel_id]
-      response = get_channel_versions(options[:channel_id], options[:api_key])
+      @api_key = options[:api_key]
+      response = get_channel_versions(options[:channel_id])
       if response.first["channelState"] == "Unpublished"
-        update_channel_version(options[:channel_id])
+        update_channel_version(options[:channel_id], get_package(options))
       else
-        create_channel_version(options[:channel_id])
+        create_channel_version(options[:channel_id], get_package(options))
       end
     end
 
@@ -53,29 +54,49 @@ module RokuBuilder
     end
 
     private
+
+    def get_package(options)
+      File.open(options[:in])
+    end
     
-    def get_channel_versions(channel, api_key)
+    def get_channel_versions(channel)
       path = "/external/channels/#{channel}/versions"
-      response = api_get(path, api_key)
+      response = api_get(path)
       JSON.parse(response.body)
     end
 
-    def create_channel_version(channel)
+    def create_channel_version(channel, package)
+      path = "/external/channels/#{channel}/versions"
+      api_post(path, package)
     end
 
     def update_channel_version(channel)
     end
 
-    def api_get(path, api_key)
+    def api_get(path)
       api_path = "/developer/v1"
       service_urn = "urn:roku:cloud-services:chanprovsvc"
-      connection = Faraday.new(url: HOST) do |f|
-        f.adapter Faraday.default_adapter
+      connection('GET', path, nil).get(api_path+path)
+    end
+
+    def api_post(path, package)
+      api_path = "/developer/v1"
+      body = {
+        "appFileBase64Encoded" => Base64.encode64(package.read)
+      }.to_json
+      response = connection('POST', path, body).post(api_path+path) do |request|
+        request.body = body
       end
-      connection.get(api_path+path) do |request|
-        request.headers["Authorization"] = "Bearer "+get_jwt_token(api_key, service_urn, "GET", path)
-        request.headers["Content-Type"] = 'application/json'
-        request.headers["Accept"] = 'application/json'
+    end
+
+    def connection(method, path, body)
+      service_urn = "urn:roku:cloud-services:chanprovsvc"
+      connection = Faraday.new(url: HOST, headers: {
+        'Authorization' => "Bearer "+get_jwt_token(@api_key, service_urn, method, path, body),
+        'Content-Type' => 'application/json',
+        'Accept' => 'application/json',
+      }) do |f|
+        f.adapter Faraday.default_adapter
       end
     end
 
@@ -96,6 +117,9 @@ module RokuBuilder
           "path" => path,
         }
       }
+      if body
+        payload["x-roku-request-spec"]["bodySha256Base64"] = Digest::SHA256.base64digest(body)
+      end
       JWT.encode(payload, jwk.signing_key, 'RS256', header)
     end
   end

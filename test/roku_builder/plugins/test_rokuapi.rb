@@ -15,6 +15,7 @@ module RokuBuilder
 
     def teardown
       @requests.each {|req| remove_request_stub(req)}
+      WebMock.reset!
     end
 
     def test_commands
@@ -40,6 +41,34 @@ module RokuBuilder
       assert_equal RokuAPI.dependencies.count, 0
     end
 
+    def test_get_package
+      api = RokuAPI.new(config: @config)
+      options = {in: "in/path"}
+      called = false
+      open_proc = proc do |path|
+        called = true
+        assert_equal options[:in], path
+      end
+      File.stub(:open, open_proc) do
+        api.send(:get_package, options)
+      end
+      assert called
+    end
+
+    def test_api_path
+      api = RokuAPI.new(config: @config)
+      assert_equal "/developer/v1", api.send(:api_path)
+    end
+
+    def test_sorted_versions
+      api = RokuAPI.new(config: @config)
+      versions = [{"version" => "1.0"}, {"version" => "1.1"}, {"version" => "2.1"}]
+      sorted = api.send(:sorted_versions, versions)
+      assert_equal "2.1", sorted[0]["version"]
+      assert_equal "1.1", sorted[1]["version"]
+      assert_equal "1.0", sorted[2]["version"]
+    end
+    
     def test_get_jwt_token
       api = RokuAPI.new(config: @config)
       urn = "test:urn"
@@ -101,17 +130,80 @@ module RokuBuilder
     def test_api_post
       api = RokuAPI.new(config: @config)
       path = "/test/path"
+      token_path = "/other/path"
       api.instance_variable_set(:@api_key, "key1")
       package = File.open(File.join(test_files_path(RokuAPITest), "test.pkg"))
       encoded = Base64.encode64(package.read)
       @requests.push(stub_request(:any, /apipub.roku.com.*/))
-      response = api.send(:api_post, path, package)
+      called = false
+      jwt_proc = proc do |api_key, service_urn, method, path, body|
+        called = true
+        assert_equal path, token_path
+        "token"
+      end
+      api.stub(:get_jwt_token, jwt_proc) do 
+        response = api.send(:api_post, path, token_path, package)
+      end
+      assert called
       assert_requested(:post, "https://apipub.roku.com/developer/v1/test/path", 
                        body: {"appFileBase64Encoded" => encoded}.to_json,
         headers: {
           "Accept" => "application/json",
           "Content-Type" => "application/json",
+          "Authorization" => /Bearer token/
+        }
+      )
+    end
+
+    def test_api_post_no_package
+      api = RokuAPI.new(config: @config)
+      path = "/test/path"
+      token_path = "/other/path"
+      api.instance_variable_set(:@api_key, "key1")
+      @requests.push(stub_request(:any, /apipub.roku.com.*/))
+      called = false
+      jwt_proc = proc do |api_key, service_urn, method, path, body|
+        called = true
+        assert_equal path, token_path
+        "token"
+      end
+      api.stub(:get_jwt_token, jwt_proc) do 
+        response = api.send(:api_post, path, token_path)
+      end
+      assert called
+      assert_requested(:post, "https://apipub.roku.com/developer/v1/test/path", 
+        headers: {
+          "Accept" => "application/json",
+          "Content-Type" => "application/json",
           "Authorization" => /Bearer .*/
+        }
+      )
+    end
+
+    def test_api_patch
+      api = RokuAPI.new(config: @config)
+      path = "/test/path"
+      token_path = "/other/path"
+      api.instance_variable_set(:@api_key, "key1")
+      package = File.open(File.join(test_files_path(RokuAPITest), "test.pkg"))
+      encoded = Base64.encode64(package.read)
+      @requests.push(stub_request(:any, /apipub.roku.com.*/))
+      called = false
+      jwt_proc = proc do |api_key, service_urn, method, path, body|
+        called = true
+        assert_equal path, token_path
+        "token"
+      end
+      api.stub(:get_jwt_token, jwt_proc) do 
+        response = api.send(:api_patch, path, token_path, package)
+      end
+      assert called
+      assert_requested(:patch, "https://apipub.roku.com/developer/v1/test/path", 
+                       body: {"path" => "/appFileBase64Encoded", "value" => encoded, "op" => "replace"}.to_json,
+        headers: {
+          "Accept" => "application/json",
+          "Content-Type" => "application/json",
+          "Authorization" => /Bearer token/
         }
       )
     end
@@ -123,14 +215,23 @@ module RokuBuilder
       response = Minitest::Mock.new
       body = { "id" => "1234", "version" => "1.1"}
       response.expect(:body, body.to_json)
+      called = 0
       get_proc = proc do |path|
+        called +=1
         assert_equal path, "/external/channels/#{channel}/versions"
         response
       end
-      api.stub(:api_get, get_proc) do
-        result = api.send(:get_channel_versions, channel)
-        assert_equal result, body        
+      sort_proc = proc do |versions|
+        called += 1
+        versions
       end
+      api.stub(:api_get, get_proc) do
+        api.stub(:sorted_versions, sort_proc) do
+          result = api.send(:get_channel_versions, channel)
+          assert_equal result, body
+        end
+      end
+      assert_equal 2, called
     end
 
     def test_submit_no_channel_id
@@ -158,14 +259,39 @@ module RokuBuilder
       assert called[:created]
       assert_nil called[:updated]
     end
+    def test_submit_without_latest_unpublished
+      api = RokuAPI.new(config: @config)
+      called = {}
+      body = api_versions
+      body.push(api_versions.first)
+      body[1]["version"] = "1.3"
+      body[1]["channelState"] = "Unpublished"
+      updated = proc {called[:updated] = true}
+      created = proc {called[:created] = true}
+      @requests.push(stub_request(:any, "https://apipub.roku.com/developer/v1/external/channels/1234/versions").to_return(
+        body: body.to_json
+      ))
+      api.stub(:create_channel_version, created) do
+        api.stub(:update_channel_version, updated) do
+          api.stub(:get_package, "") do
+            api.submit(options: @options)
+          end
+        end
+      end
+      assert called[:created]
+      assert_nil called[:updated]
+    end
 
     def test_submit_with_unpublished
       api = RokuAPI.new(config: @config)
-      called = {}
-      updated = proc {called[:updated] = true}
-      created = proc {called[:created] = true}
       body = api_versions
       body[0]["channelState"] = "Unpublished"
+      called = {}
+      updated = proc do |channel, package, version|
+        called[:updated] = true
+        assert_equal body[0]["id"], version
+      end
+      created = proc {called[:created] = true}
       @requests.push(stub_request(:any, "https://apipub.roku.com/developer/v1/external/channels/1234/versions").to_return(
         body: body.to_json
       ))
@@ -185,16 +311,131 @@ module RokuBuilder
       channel = "1234"
       api.instance_variable_set(:@api_key, "key1")
       package = File.open(File.join(test_files_path(RokuAPITest), "test.pkg"))
-      response = Minitest::Mock.new
-      body = { "id" => "1234", "version" => "1.1"}
-      response.expect(:body, body.to_json)
-      post_proc = proc do |path, package|
+      called = false
+      post_proc = proc do |path, token_path, package|
+        called = true
         assert_equal path, "/external/channels/#{channel}/versions"
+        assert_equal token_path, "/external/channels/#{channel}/versions"
         assert_kind_of File, package
       end
       api.stub(:api_post, post_proc) do
         api.send(:create_channel_version, channel, package)
       end
+      assert called
+    end
+
+    def test_update_channel_version
+      api = RokuAPI.new(config: @config)
+      channel = "1234"
+      version = "1234"
+      api.instance_variable_set(:@api_key, "key1")
+      package = File.open(File.join(test_files_path(RokuAPITest), "test.pkg"))
+      called = false
+      patch_proc = proc do |path, token_path, package|
+        called = true
+        assert_equal path, "/external/channel/#{channel}/#{version}"
+        assert_equal token_path, "/external/channels/#{channel}/#{version}"
+        assert_kind_of File, package
+      end
+      api.stub(:api_patch, patch_proc) do
+        api.send(:update_channel_version, channel, package, version)
+      end
+      assert called
+    end
+
+    def test_publish_no_channel_id
+      api = RokuAPI.new(config: @config)
+      assert_raises RokuBuilder::InvalidOptions do
+        params = {options: {}}
+        api.send(:publish, **params)
+      end
+    end
+
+    def test_publish_without_unpublished
+      api = RokuAPI.new(config: @config)
+      expected_channel = "1234"
+      api.instance_variable_set(:@api_key, "key1")
+      body = api_versions
+      called = false
+      get_proc = proc do |channel|
+        called = true
+        assert_equal expected_channel, channel
+        body
+      end
+      api.stub(:get_channel_versions, get_proc) do
+        assert_raises RokuBuilder::ExecutionError do
+          params = {options: {channel_id: expected_channel}}
+          api.send(:publish, **params)
+        end
+      end
+      assert called
+    end
+
+    def test_publish_without_latest_unpublished
+      api = RokuAPI.new(config: @config)
+      expected_channel = "1234"
+      api.instance_variable_set(:@api_key, "key1")
+      body = api_versions
+      body.push(api_versions.first)
+      body[1]["version"] = "1.3"
+      body[1]["channelState"] = "Unpublished"
+      called = false
+      get_proc = proc do |channel|
+        called = true
+        assert_equal expected_channel, channel
+        body
+      end
+      api.stub(:get_channel_versions, get_proc) do
+        assert_raises RokuBuilder::ExecutionError do
+          params = {options: {channel_id: expected_channel}}
+          api.send(:publish, **params)
+        end
+      end
+      assert called
+    end
+
+    def test_publish_with_unpublished
+      api = RokuAPI.new(config: @config)
+      expected_channel = "1234"
+      api.instance_variable_set(:@api_key, "key1")
+      body = [{ "id" => "1234", "version" => "1.1", "channelState" => "Unpublished"}]
+      called = 0
+      get_proc = proc do |channel|
+        called += 1
+        assert_equal expected_channel, channel
+        body
+      end
+      post_proc = proc do |channel, version|
+        called += 1
+        assert_equal expected_channel, channel
+        assert_equal body.first["id"], version
+      end
+      api.stub(:get_channel_versions, get_proc) do
+        api.stub(:publish_channel_version, post_proc) do
+          params = {options: {channel_id: expected_channel}}
+          api.send(:publish, **params)
+        end
+      end
+      assert_equal called, 2
+    end
+
+    def test_publish_channel_version
+      api = RokuAPI.new(config: @config)
+      channel = "1234"
+      api.instance_variable_set(:@api_key, "key1")
+      response = Minitest::Mock.new
+      body = { "id" => "1234", "version" => "1.1"}
+      response.expect(:body, body.to_json)
+      called = false
+      post_proc = proc do |path, token_path|
+        called = true
+        assert_equal path, "/external/channels/#{channel}/versions/#{body["id"]}"
+        assert_equal token_path, "/external/channels/#{channel}/versions/#{body["id"]}/state"
+      end
+      api.stub(:api_post, post_proc) do
+        api.send(:publish_channel_version, channel, body["id"])
+      end
+      assert called
     end
   end
 end

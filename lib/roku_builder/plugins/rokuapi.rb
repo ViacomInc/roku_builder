@@ -44,13 +44,19 @@ module RokuBuilder
       @api_key = options[:api_key]
       response = get_channel_versions(options[:channel_id])
       if response.first["channelState"] == "Unpublished"
-        update_channel_version(options[:channel_id], get_package(options))
+        response = update_channel_version(options[:channel_id], get_package(options), response.last["id"])
       else
-        create_channel_version(options[:channel_id], get_package(options))
+        response = create_channel_version(options[:channel_id], get_package(options))
       end
     end
 
     def publish(options:)
+      path = "/test/path"
+      raise RokuBuilder::InvalidOptions, "Missing channel id" unless options[:channel_id]
+      @api_key = options[:api_key]
+      response = get_channel_versions(options[:channel_id])
+      raise RokuBuilder::ExecutionError unless response.first["channelState"] == "Unpublished"
+      response = publish_channel_version(options[:channel_id], response.last["id"])
     end
 
     private
@@ -58,33 +64,65 @@ module RokuBuilder
     def get_package(options)
       File.open(options[:in])
     end
-    
+
+    def api_path
+      "/developer/v1"
+    end
+
     def get_channel_versions(channel)
       path = "/external/channels/#{channel}/versions"
       response = api_get(path)
-      JSON.parse(response.body)
+      sorted_versions(JSON.parse(response.body))
     end
 
+    def sorted_versions(versions)
+      sorted = versions.sort do |a, b|
+        b["version"].to_f <=> a["version"].to_f
+      end
+      sorted
+    end
+    
     def create_channel_version(channel, package)
       path = "/external/channels/#{channel}/versions"
-      api_post(path, package)
+      api_post(path, path, package)
     end
 
-    def update_channel_version(channel)
+    def update_channel_version(channel, package, version)
+      path = "/external/channel/#{channel}/#{version}"
+      token_path = "/external/channels/#{channel}/#{version}"
+      api_patch(path, token_path, package)
+    end
+
+    def publish_channel_version(channel, version)
+      path = "/external/channels/#{channel}/versions/#{version}"
+      token_path = "/external/channels/#{channel}/versions/#{version}/state"
+      api_post(path, token_path)
     end
 
     def api_get(path)
-      api_path = "/developer/v1"
       service_urn = "urn:roku:cloud-services:chanprovsvc"
       connection('GET', path, nil).get(api_path+path)
     end
 
-    def api_post(path, package)
-      api_path = "/developer/v1"
+    def api_post(path, token_path, package=nil)
+      body = {}.to_json
+      if package
+        body = {
+          "appFileBase64Encoded" => Base64.encode64(package.read)
+        }.to_json
+      end
+      connection('POST', token_path, body).post(api_path+path) do |request|
+        request.body = body
+      end
+    end
+
+    def api_patch(path, token_path, package)
       body = {
-        "appFileBase64Encoded" => Base64.encode64(package.read)
+        "path" => "/appFileBase64Encoded",
+        "value" => Base64.encode64(package.read),
+        "op" => "replace"
       }.to_json
-      response = connection('POST', path, body).post(api_path+path) do |request|
+      response = connection('PATCH', token_path, body).patch(api_path+path) do |request|
         request.body = body
       end
     end

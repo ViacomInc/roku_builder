@@ -33,6 +33,9 @@ module RokuBuilder
       parser.on("--api-key KEY", 'The API key to use to submit/publish') do |key|
         options[:api_key] = key
       end
+      parser.on("--no-publish", 'Prevent the channel from being automatically published when submitted') do
+        options[:no_publish] = true
+      end 
     end
 
     def self.dependencies
@@ -42,12 +45,15 @@ module RokuBuilder
     def submit(options:)
       raise RokuBuilder::InvalidOptions, "Missing channel id" unless options[:channel_id]
       @api_key = options[:api_key]
+      @no_publish = !!options[:no_publish]
       response = get_channel_versions(options[:channel_id])
       if response.first["channelState"] == "Unpublished"
         response = update_channel_version(options[:channel_id], get_package(options), response.last["id"])
       else
         response = create_channel_version(options[:channel_id], get_package(options))
       end
+      raise RokuBuilder::ExecutionError, "Request failed: #{response.reason_phrase}" unless response.success?
+      response
     end
 
     def publish(options:)
@@ -57,6 +63,8 @@ module RokuBuilder
       response = get_channel_versions(options[:channel_id])
       raise RokuBuilder::ExecutionError unless response.first["channelState"] == "Unpublished"
       response = publish_channel_version(options[:channel_id], response.last["id"])
+      raise RokuBuilder::ExecutionError, "Request failed: #{response.reason_phrase}" unless response.success?
+      response
     end
 
     private
@@ -84,7 +92,11 @@ module RokuBuilder
     
     def create_channel_version(channel, package)
       path = "/external/channels/#{channel}/versions"
-      api_post(path, path, package)
+      params = nil
+      unless @no_publish
+        params = {"channelState" => "Published"}
+      end
+      api_post(path, path, package, params)
     end
 
     def update_channel_version(channel, package, version)
@@ -104,7 +116,7 @@ module RokuBuilder
       connection('GET', path, nil).get(api_path+path)
     end
 
-    def api_post(path, token_path, package=nil)
+    def api_post(path, token_path, package=nil, params = nil)
       body = {}.to_json
       if package
         body = {
@@ -112,6 +124,9 @@ module RokuBuilder
         }.to_json
       end
       connection('POST', token_path, body).post(api_path+path) do |request|
+        if params
+          request.params = params
+        end if
         request.body = body
       end
     end

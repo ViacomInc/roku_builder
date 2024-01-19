@@ -250,6 +250,7 @@ module RokuBuilder
       @options[:no_publish] = true
       response = Minitest::Mock.new
       response.expect(:success?, true)
+      response.expect(:body, api_versions[0].to_json)
       updated = proc {called[:updated] = true; response}
       created = proc {called[:created] = true; response}
       @requests.push(stub_request(:any, "https://apipub.roku.com/developer/v1/external/channels/1234/versions").to_return(
@@ -276,6 +277,7 @@ module RokuBuilder
       body[1]["channelState"] = "Unpublished"
       response = Minitest::Mock.new
       response.expect(:success?, true)
+      response.expect(:body, body[0].to_json)
       updated = proc {called[:updated] = true; response}
       created = proc {called[:created] = true; response}
       @requests.push(stub_request(:any, "https://apipub.roku.com/developer/v1/external/channels/1234/versions").to_return(
@@ -299,6 +301,7 @@ module RokuBuilder
       called = {}
       response = Minitest::Mock.new
       response.expect(:success?, true)
+      response.expect(:body, body[0].to_json)
       updated = proc do |channel, package, version|
         called[:updated] = true
         assert_equal body[0]["id"], version
@@ -441,6 +444,7 @@ module RokuBuilder
       end
       response = Minitest::Mock.new
       response.expect(:success?, true)
+      response.expect(:body, body[0].to_json)
       post_proc = proc do |channel, version|
         called += 1
         assert_equal expected_channel, channel
@@ -494,13 +498,15 @@ module RokuBuilder
 
     def test_submit_response_created
       api = RokuAPI.new(config: @config)
+      body = { "id" => "1234", "version" => "1.1"}
       response = Minitest::Mock.new
       response.expect(:success?, true)
-      response.expect(:verify!, true)
+      response.expect(:body, body.to_json)
       api.stub(:get_channel_versions, api_versions) do 
         api.stub(:create_channel_version, response) do
           api.stub(:get_package, "") do
-            assert api.submit(options: @options).verify!
+            response_json = api.submit(options: @options)
+            assert_equal body, response_json
           end 
         end 
       end 
@@ -509,15 +515,17 @@ module RokuBuilder
 
     def test_submit_response_updated
       api = RokuAPI.new(config: @config)
+      body = { "id" => "1234", "version" => "1.1"}
       response = Minitest::Mock.new
       response.expect(:success?, true)
-      response.expect(:verify!, true)
+      response.expect(:body, body.to_json)
       versions = api_versions
       versions[0]["channelState"] = "Unpublished"
       api.stub(:get_channel_versions, versions) do 
         api.stub(:update_channel_version, response) do
           api.stub(:get_package, "") do
-            assert api.submit(options: @options).verify!
+            response_json = api.submit(options: @options)
+            assert_equal body, response_json
           end 
         end 
       end 
@@ -526,14 +534,16 @@ module RokuBuilder
 
     def test_publish_response
       api = RokuAPI.new(config: @config)
+      body = { "id" => "1234", "version" => "1.1"}
       response = Minitest::Mock.new
       response.expect(:success?, true)
-      response.expect(:verify!, true)
+      response.expect(:body, body.to_json)
       versions = api_versions
       versions[0]["channelState"] = "Unpublished"
       api.stub(:get_channel_versions, versions) do 
         api.stub(:publish_channel_version, response) do
-          assert api.publish(options: @options).verify!
+          response_json = api.publish(options: @options)
+          assert_equal body, response_json
         end 
       end 
       assert_mock response

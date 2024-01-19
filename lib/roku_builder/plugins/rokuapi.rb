@@ -53,7 +53,7 @@ module RokuBuilder
         response = create_channel_version(options[:channel_id], get_package(options))
       end
       raise RokuBuilder::ExecutionError, "Request failed: #{response.reason_phrase}" unless response.success?
-      response
+      JSON.parse(response.body)
     end
 
     def publish(options:)
@@ -64,7 +64,7 @@ module RokuBuilder
       raise RokuBuilder::ExecutionError unless response.first["channelState"] == "Unpublished"
       response = publish_channel_version(options[:channel_id], response.last["id"])
       raise RokuBuilder::ExecutionError, "Request failed: #{response.reason_phrase}" unless response.success?
-      response
+      JSON.parse(response.body)
     end
 
     private

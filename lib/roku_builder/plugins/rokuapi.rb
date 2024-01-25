@@ -44,6 +44,7 @@ module RokuBuilder
 
     def submit(options:)
       raise RokuBuilder::InvalidOptions, "Missing channel id" unless options[:channel_id]
+      @logger.info "Submit to channel #{options[:channel_id]}"
       @api_key = options[:api_key]
       @no_publish = !!options[:no_publish]
       response = get_channel_versions(options[:channel_id])
@@ -57,12 +58,12 @@ module RokuBuilder
     end
 
     def publish(options:)
-      path = "/test/path"
       raise RokuBuilder::InvalidOptions, "Missing channel id" unless options[:channel_id]
+      @logger.info "Publish to channel #{options[:channel_id]}"
       @api_key = options[:api_key]
       response = get_channel_versions(options[:channel_id])
       raise RokuBuilder::ExecutionError unless response.first["channelState"] == "Unpublished"
-      response = publish_channel_version(options[:channel_id], response.last["id"])
+      response = publish_channel_version(options[:channel_id], response.first["id"])
       raise RokuBuilder::ExecutionError, "Request failed: #{response.reason_phrase}" unless response.success?
       JSON.parse(response.body)
     end
@@ -85,7 +86,10 @@ module RokuBuilder
 
     def sorted_versions(versions)
       sorted = versions.sort do |a, b|
-        b["version"].to_f <=> a["version"].to_f
+        aa, ab = a["version"].split(".").map{|i| i.to_i}
+        ba, bb = b["version"].split(".").map{|i| i.to_i}
+        value = (aa == ba ? bb <=> ab : ba <=> aa)
+        value
       end
       sorted
     end

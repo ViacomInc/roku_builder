@@ -63,11 +63,16 @@ module RokuBuilder
 
     def test_sorted_versions
       api = RokuAPI.new(config: @config)
-      versions = [{"version" => "1.0"}, {"version" => "1.1"}, {"version" => "2.1"}]
+      versions = [{"version" => "1.9"}, {"version" => "1.11"}, {"version" => "2.3"}, {"version" => "2.4"}]
       sorted = api.send(:sorted_versions, versions)
-      assert_equal "2.1", sorted[0]["version"]
-      assert_equal "1.1", sorted[1]["version"]
-      assert_equal "1.0", sorted[2]["version"]
+      assert_equal "2.4", sorted[0]["version"]
+      assert_equal "2.3", sorted[1]["version"]
+      assert_equal "1.11", sorted[2]["version"]
+      assert_equal "1.9", sorted[3]["version"]
+      versions = [{"version" => "1.4"}, {"version" => "1.3"}]
+      sorted = api.send(:sorted_versions, versions)
+      assert_equal "1.4", sorted[0]["version"]
+      assert_equal "1.3", sorted[1]["version"]
     end
 
     def test_get_jwt_token

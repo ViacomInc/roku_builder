@@ -143,7 +143,8 @@ def api_versions
       "channelId" => 722085,
       "version" => "1.4",
       "minFirmwareVersion" => 0,
-      "minimumFirmwareVersionTextShort" => "v2.5 b388"
+      "minimumFirmwareVersionTextShort" => "v2.5 b388",
+      "createdDate" => DateTime.now.to_s
     }
   ]
 end

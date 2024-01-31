@@ -63,13 +63,21 @@ module RokuBuilder
 
     def test_sorted_versions
       api = RokuAPI.new(config: @config)
-      versions = [{"version" => "1.9"}, {"version" => "1.11"}, {"version" => "2.3"}, {"version" => "2.4"}]
+      versions = [
+        {"version" => "1.9", "createdDate" => (DateTime.now - 30).to_s},
+        {"version" => "1.11", "createdDate" => (DateTime.now - 20).to_s},
+        {"version" => "2.3", "createdDate" => (DateTime.now - 10).to_s},
+        {"version" => "2.4", "createdDate" => (DateTime.now).to_s}
+      ]
       sorted = api.send(:sorted_versions, versions)
       assert_equal "2.4", sorted[0]["version"]
       assert_equal "2.3", sorted[1]["version"]
       assert_equal "1.11", sorted[2]["version"]
       assert_equal "1.9", sorted[3]["version"]
-      versions = [{"version" => "1.4"}, {"version" => "1.3"}]
+      versions = [
+        {"version" => "1.4", "createdDate" => (DateTime.now).to_s},
+        {"version" => "1.3", "createdDate" => (DateTime.now - 10).to_s}
+      ]
       sorted = api.send(:sorted_versions, versions)
       assert_equal "1.4", sorted[0]["version"]
       assert_equal "1.3", sorted[1]["version"]
@@ -280,6 +288,7 @@ module RokuBuilder
       body.push(api_versions.first)
       body[1]["version"] = "1.3"
       body[1]["channelState"] = "Unpublished"
+      body[1]["createdDate"] = (DateTime.now -10).to_s
       response = Minitest::Mock.new
       response.expect(:success?, true)
       response.expect(:body, body[0].to_json)

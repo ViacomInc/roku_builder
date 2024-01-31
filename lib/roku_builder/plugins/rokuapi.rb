@@ -86,10 +86,7 @@ module RokuBuilder
 
     def sorted_versions(versions)
       sorted = versions.sort do |a, b|
-        aa, ab = a["version"].split(".").map{|i| i.to_i}
-        ba, bb = b["version"].split(".").map{|i| i.to_i}
-        value = (aa == ba ? bb <=> ab : ba <=> aa)
-        value
+        DateTime.parse(b["createdDate"]) <=> DateTime.parse(a["createdDate"])
       end
       sorted
     end

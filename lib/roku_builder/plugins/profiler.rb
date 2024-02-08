@@ -139,8 +139,8 @@ module RokuBuilder
 
     # Print the node stats
     def get_stats
-      end_reg = /<\/All_Nodes>/
-      start_reg = /<All_Nodes>/
+      end_reg = /<\/All_Nodes/
+      start_reg = /<All_Nodes/
       lines = get_command_response(command: "sgnodes all", start_reg: start_reg, end_reg: end_reg)
       xml_string = lines.join("\n")
       stats = {"Total" => {count: 0}}
@@ -211,14 +211,14 @@ module RokuBuilder
     end
 
     def print_all_nodes
-      start_reg = /<All_Nodes>/
-      end_reg = /<\/All_Nodes>/
+      start_reg = /<All_Nodes/
+      end_reg = /<\/All_Nodes/
       lines = get_command_response(command: "sgnodes all", start_reg: start_reg, end_reg: end_reg)
       lines.each {|line| print line}
     end
     def print_root_nodes
-      start_reg = /<Root_Nodes>/
-      end_reg = /<\/Root_Nodes>/
+      start_reg = /<Root_Nodes/
+      end_reg = /<\/Root_Nodes/
       lines = get_command_response(command: "sgnodes roots", start_reg: start_reg, end_reg: end_reg)
       lines.each {|line| print line}
     end
@@ -230,14 +230,14 @@ module RokuBuilder
     end
     def print_image_information
       start_reg = /RoGraphics instance/
-      end_reg = /Available memory/
+      end_reg = /Available texture memory/
       lines = get_command_response(command: "r2d2_bitmaps", start_reg: start_reg, end_reg: end_reg)
       lines = sort_image_lines(lines, /0x[^\s]+\s+\d+\s+\d+\s+\d+\s+\d+/, 4)
       lines.each {|line| print line}
     end
     def print_memmory_usage
       start_reg = /RoGraphics instance/
-      end_reg = /Available memory/
+      end_reg = /Available texture memory/
       begin
       while true
         lines = get_command_response(command: "r2d2_bitmaps", start_reg: start_reg, end_reg: end_reg, ignore_warnings: true)
@@ -338,7 +338,7 @@ module RokuBuilder
         first_match = /RoGraphics instance (0x.*)/.match(line)
         if first_match
           while line != nil
-            usage_match = /Available memory (\d*) used (\d*) max (\d*)/.match(line)
+            usage_match = /Available texture memory (\d*) used (\d*) max (\d*)/.match(line)
               if usage_match
                 data[first_match[1]] = [usage_match[1].to_i, usage_match[2].to_i, usage_match[3].to_i]
                 break

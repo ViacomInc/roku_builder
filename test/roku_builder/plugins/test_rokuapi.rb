@@ -103,16 +103,17 @@ module RokuBuilder
       assert_equal spec["path"], path
     end
 
-    def test_get_jwt_token_with_body
+    def test_get_jwt_token_with_body_and_params
       api = RokuAPI.new(config: @config)
       urn = "test:urn"
       method = "GET"
       path = "/test/path"
+      params = {"param" => "value"}
       body = {
         "appFileBase64Encoded" => Base64.encode64(File.open(File.join(test_files_path(RokuAPITest), "test.pkg")).read)
       }
       sha256 = Digest::SHA256.base64digest(body.to_json)
-      token = api.send(:get_jwt_token, @options[:api_key], urn, method, path, body.to_json)
+      token = api.send(:get_jwt_token, @options[:api_key], urn, method, path, body.to_json, params)
       jwk = JWT::JWK.new(JSON.parse(File.read(@config.api_keys[:key1])))
       decoded = JWT.decode(token, jwk.public_key, true, {algorithm: 'RS256'})
       assert_equal decoded[1]["typ"], "JWT"
@@ -124,7 +125,7 @@ module RokuBuilder
       refute_nil spec
       assert_equal spec["serviceUrn"], urn
       assert_equal spec["httpMethod"], method
-      assert_equal spec["path"], path
+      assert_equal spec["path"], path+"?"+URI.encode_www_form(params)
       assert_equal spec["bodySha256Base64"], sha256
     end
 
@@ -346,7 +347,7 @@ module RokuBuilder
         called = true
         assert_equal path, "/external/channels/#{channel}/versions"
         assert_equal token_path, "/external/channels/#{channel}/versions"
-        assert_equal "Published", params["channelState"]
+        assert_equal "Published", params["state"]
         assert_kind_of File, package
       end
       api.stub(:api_post, post_proc) do

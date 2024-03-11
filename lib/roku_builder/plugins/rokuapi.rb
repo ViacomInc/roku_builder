@@ -95,7 +95,7 @@ module RokuBuilder
       path = "/external/channels/#{channel}/versions"
       params = nil
       unless @no_publish
-        params = {"channelState" => "Published"}
+        params = {"state" => "Published"}
       end
       api_post(path, path, package, params)
     end
@@ -124,7 +124,7 @@ module RokuBuilder
           "appFileBase64Encoded" => Base64.encode64(package.read)
         }.to_json
       end
-      connection('POST', token_path, body).post(api_path+path) do |request|
+      connection('POST', token_path, body, params).post(api_path+path) do |request|
         if params
           request.params = params
         end if
@@ -143,10 +143,10 @@ module RokuBuilder
       end
     end
 
-    def connection(method, path, body)
+    def connection(method, path, body, params = nil)
       service_urn = "urn:roku:cloud-services:chanprovsvc"
       connection = Faraday.new(url: HOST, headers: {
-        'Authorization' => "Bearer "+get_jwt_token(@api_key, service_urn, method, path, body),
+        'Authorization' => "Bearer "+get_jwt_token(@api_key, service_urn, method, path, body, params),
         'Content-Type' => 'application/json',
         'Accept' => 'application/json',
       }) do |f|
@@ -154,10 +154,11 @@ module RokuBuilder
       end
     end
 
-    def get_jwt_token(api_key, service_urn, method, path, body = nil)
+    def get_jwt_token(api_key, service_urn, method, path, body = nil, params = nil)
       key_file = File.expand_path(@config.api_keys[api_key.to_sym])
       raise InvalidOptions "Missing api key" unless key_file
       jwk = JWT::JWK.new(JSON.parse(File.read(key_file)))
+      path += "?" + URI.encode_www_form(params) if params
       header = {
         "typ" => "JWT",
         "kid" => jwk.export[:kid]

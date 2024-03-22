@@ -39,12 +39,23 @@ module RokuBuilder
       File.delete(lock) if File.exist?(lock)
     end
 
+    def release_all
+      all_devices.each do |device_name|
+        device = Device.new(device_name, @config.devices[device_name])
+        release_device(device)
+      end
+    end
+
     private
 
-    def reserve_any(no_lock: false)
+    def all_devices
       default = @config.device_default
-      all_devices = @config.devices.keys.reject{|key, value| default == key}
-      all_devices.unshift(default)
+      devices = @config.devices.keys.reject{|key, value| default == key}
+      devices.unshift(default)
+      devices
+    end
+
+    def reserve_any(no_lock: false)
       all_devices.each do |device_name|
         device = Device.new(device_name, @config.devices[device_name])
         if device_available!(device: device, no_lock: no_lock)

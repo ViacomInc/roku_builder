@@ -11,7 +11,8 @@ module RokuBuilder
         validate: {keyed: true},
         increment: {source: true, stage: true},
         dostage: {source: true},
-        dounstage: {source: true}
+        dounstage: {source: true},
+        release_all_devices: {},
       }
     end
 
@@ -31,6 +32,9 @@ module RokuBuilder
       end
       parser.on("--do-unstage", "Run the unstager. Used for scripting. Always run --do-script first") do
         options[:dounstage] = true
+      end
+      parser.on("--release-all-devices", "Releases all devices, deleting lock files") do
+        options[:release_all_devices] = true
       end
       parser.separator ""
       parser.separator "Config Options:"
@@ -122,6 +126,11 @@ module RokuBuilder
     end
     def dounstage(options:)
       Stager.new(config: @config, options: options).unstage
+    end
+    def release_all_devices(options:)
+      manager = DeviceManager.new(config: @config, options: @options)
+      manager.release_all
+      Logger.instance.info "All devices unlocked"
     end
 
     def self.get_help_text(parser:, options:, plugin_name:)

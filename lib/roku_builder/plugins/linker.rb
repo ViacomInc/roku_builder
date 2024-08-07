@@ -16,10 +16,10 @@ module RokuBuilder
 
     def self.parse_options(parser:,  options:)
       parser.separator "Commands:"
-      parser.on("-o", "--deeplink OPTIONS", "Launch and Deeplink into app. Define options as keypairs. (eg. a:b, c:d,e:f)") do |o|
+      parser.on("-o", "--deeplink OPTIONS", "Launch and Deeplink into app. Define options as keypairs (eg. \"a:b, c:d,e:f\") or name (eg. \"name\"). To use named deeplinks, including them in your config file: \"deeplinks\": { \"name\": \"a:b, c:d, e:f\" }") do |o|
         options[:deeplink] = o
       end
-      parser.on("-i", "--input OPTIONS", "Deeplink into app. Define options as keypairs. (eg. a:b, c:d,e:f)") do |o|
+      parser.on("-i", "--input OPTIONS", "Deeplink into app. Define options as keypairs (eg. \"a:b, c:d,e:f\") or name (eg. \"name\"). To use named deeplinks, including them in your config file: \"deeplinks\": { \"name\": \"a:b, c:d, e:f\" }") do |o|
         options[:input] = o
       end
       parser.on("-A", "--app-list", "List currently installed apps") do
@@ -80,6 +80,13 @@ module RokuBuilder
         unless payload.keys.count > 0
           @logger.warn "No options sent to launched app"
         else
+          deeplinks = @config.deeplinks
+          firstKey = payload.keys.first
+          if !deeplinks.nil?
+            if !deeplinks[firstKey].nil?
+              payload = RokuBuilder.options_parse(options: deeplinks[firstKey])
+            end
+          end
           payload = parameterize(payload)
           path = "#{path}?#{payload}"
             @logger.info "Deeplink:"

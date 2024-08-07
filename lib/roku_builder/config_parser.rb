@@ -31,6 +31,7 @@ module RokuBuilder
       setup_root_dir
       setup_input_mappings
       setup_console_log
+      setup_deeplinks
     end
 
     def process_in_argument
@@ -222,5 +223,10 @@ module RokuBuilder
     def setup_console_log
       @parsed[:console_log] = @config[:console_log]
     end
+
+    def setup_deeplinks
+      @parsed[:deeplinks] = @config[:deeplinks]
+    end
+
   end
 end

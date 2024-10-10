@@ -26,6 +26,7 @@ module RokuBuilder
       setup_project
       setup_in_out_file
       setup_project_config
+      setup_build_dir
       setup_stage_config
       setup_key_config
       setup_root_dir
@@ -170,6 +171,11 @@ module RokuBuilder
       @parsed[:project][:stage_method] = :working if @options[:working]
     end
 
+    def setup_build_dir
+      if @options[:build_dir].nil? and parsed[:project] and not @parsed[:project][:build_dir].nil?
+        @options[:build_dir] = File.expand_path(@parsed[:project][:build_dir], @parsed[:project][:directory])
+      end
+    end
 
     def setup_stage_config
       if project_required

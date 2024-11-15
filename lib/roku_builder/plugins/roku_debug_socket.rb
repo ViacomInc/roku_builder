@@ -9,29 +9,31 @@ module RokuBuilder
       @logger = logger
       @request_id = 1
       @active_requests = {}
-      @current_packet_length = 0
+      @current_packet_length = 24
     end
 
     def do_handshake
       send_uint64(MAGIC)
       raise SocketError, 'Non-matching Magic Numbers' unless MAGIC == read_uint64
       version = [read_uint32(), read_uint32(), read_uint32()]
-      raise IOError, "Unsupported Version" unless support_version?(version)
-      remaining_length = read_uint32()-12
+      raise IOError, "Unsupported Version: #{version}" unless support_version?(version)
+      @current_packet_length = read_uint32()-4
       platform_revision_timestamp = Time.at(read_int64()/1000).to_datetime
       @logger.debug "Platform Revision Timestamp: #{platform_revision_timestamp}"
-      @logger.debug "Remaining bytes: #{remaining_length}"
-      remaining_length.times {read_int8}
+      @logger.debug "Remaining bytes: #{@current_packet_length}"
+      clean_packet
     end
 
     def get_response
       response = {}
       @current_packet_length = read_uint32(true) - 4
+      @logger.debug "Packet Length: #{@current_packet_length}"
       response[:request_id] = read_uint32
       @logger.debug "Recieved Response: #{response[:request_id]}, bytes left: #{@current_packet_length}"
       response[:error_code] = read_uint32
       if response[:request_id] == 0
         response[:update_type] = read_uint32
+        @logger.debug "Update Type: #{response[:update_type]}"
         case response[:update_type]
         when 0
           raise IOError, "Undefined Update Type"
@@ -62,6 +64,18 @@ module RokuBuilder
           data[:line_number] = read_uint32
           data[:library_name] = read_utf8z
           response[:data] = data
+        when 6
+          data[:flags] = read_uint32
+          data[:num_breakpoints] = read_uint32
+          data[:verified_breakpoint_info] = []
+          data[:num_breakpoints].times do
+            data[:verified_breakpoint_info].push({
+              breakpoint_id: read_utf8z
+            })
+          end
+        when 7
+          data[:flags] = read_uint32
+          data[:protocol_error_code] = read_uint32
         end
       elsif @active_requests[response[:request_id].to_s]
         if response[:error_code] != 0
@@ -70,8 +84,6 @@ module RokuBuilder
           response[:error_flags].times do
             response[:error_data].push read_uint8()
           end
-        else
-          response[:data] = read_uint8()
         end
         response[:command] = @active_requests[response[:request_id].to_s]
         response[:data] = get_data(response[:command])
@@ -211,6 +223,10 @@ module RokuBuilder
     end
 
     def read(length, map, non_block = nil)
+      if(@current_packet_length - length) < 0 and non_block.nil?
+        clean_packet
+        raise IOError, "Not enough bytes in packet(#{@current_packet_length} of #{length})"
+      end
       @current_packet_length -= length if @current_packet_length > 0
       if non_block
         value = recv_nonblock(length, Socket::MSG_PEEK)
@@ -244,6 +260,7 @@ module RokuBuilder
 
     def support_version?(version)
       supported_versions = [
+        [3, 2, 0],
         [3, 1, 0],
         [3, 0, 0]
       ]

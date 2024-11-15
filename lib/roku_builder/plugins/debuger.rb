@@ -6,13 +6,13 @@ module RokuBuilder
     extend Plugin
 
     def self.commands
-      {debug: {source: true, device: true, stage: true}}
+      {debug_app: {source: true, device: true, stage: true}}
     end
 
     def self.parse_options(parser:, options:)
       parser.separator "Commands:"
-      parser.on("-B", "--debug", "Sideload an app and run the remote debugger") do |m|
-        options[:debug] = true
+      parser.on("-B", "--debug-app", "Sideload an app and run the remote debugger") do |m|
+        options[:debug_app] = true
       end
     end
 
@@ -20,7 +20,7 @@ module RokuBuilder
       [Loader]
     end
 
-    def debug(options:)
+    def debug_app(options:)
       loader = Loader.new(config: @config)
       options[:remoteDebug] = true
       @device = RokuBuilder.device_manager.reserve_device()
@@ -28,7 +28,7 @@ module RokuBuilder
       begin
         @stopped = false
         initial_continue = false
-        @queue = Queue.new
+        @queue = Thread::Queue.new
         start_socket
         start_input_monitor
         loop do
@@ -36,11 +36,12 @@ module RokuBuilder
             event = @queue.pop(true)
             case event[:type]
             when :logging
-              @logger.unknown event[:value]
+              puts event[:value]
             when :input
               process_command event[:value]
             end
           rescue ThreadError
+            #Queue Empty
           end
           response = get_socket_response()
           process_response(response) if response
@@ -94,6 +95,7 @@ module RokuBuilder
         loop do
           command = gets
           unless command.empty?
+            @logger.debug "Recieved Input: #{command}"
             queue.push({
               type: :input,
               value: command.downcase.chomp
@@ -155,14 +157,16 @@ module RokuBuilder
         loop do
           begin
             value = socket.recv_nonblock(1)
-            if value.ord == 10
-              queue.push({
-                type: :logging,
-                value: text
-              })
-              text = ""
-            else
-              text += value
+            unless value.nil?
+              if value.ord == 10
+                queue.push({
+                  type: :logging,
+                  value: text
+                })
+                text = ""
+              else
+                text += value
+              end
             end
           rescue IO::WaitReadable
             #Do nothing
@@ -172,7 +176,7 @@ module RokuBuilder
     end
 
     def process_command(command)
-      byebug
+      @logger.debug "Processing command: #{command}"
       case command
       when "s", "stop"
         @logger.debug "Sending Stop"

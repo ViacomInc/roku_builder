@@ -195,7 +195,7 @@ module RokuBuilder
       waitfor = Proc.new do |telnet_config, &blk|
       assert_equal(/.+/, telnet_config["Match"])
       assert_equal(1, telnet_config["Timeout"])
-      txt = " RoGraphics instance\n0x234 1 2 3 4\nAvailable memory\n"
+      txt = " RoGraphics instance\n0x234 1 2 3 4\nAvailable texture memory\n"
       blk.call(txt)
       true
       end
@@ -227,7 +227,7 @@ module RokuBuilder
       waitfor = Proc.new do |telnet_config, &blk|
       assert_equal(/.+/, telnet_config["Match"])
       assert_equal(1, telnet_config["Timeout"])
-      txt = " RoGraphics instance 0x123\nAvailable memory 123 used 456 max 579\n"
+      txt = " RoGraphics instance 0x123\nAvailable texture memory 123 used 456 max 579\n"
       blk.call(txt)
       true
       end

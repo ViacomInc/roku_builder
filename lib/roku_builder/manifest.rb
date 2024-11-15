@@ -4,7 +4,9 @@ module RokuBuilder
   class Manifest
 
     def self.generate(config:, attributes:)
-      FileUtils.touch(File.join(config.parsed[:root_dir], "manifest"))
+      root_dir  = config.build_dir
+      root_dir ||= config.root_dir
+      FileUtils.touch(File.join(root_dir, "manifest"))
       manifest = new(config: config)
       manifest.update(attributes: default_params.merge(attributes))
       manifest
@@ -78,7 +80,8 @@ module RokuBuilder
     end
 
     def process_manifest(process_folder, process_zip)
-      root_dir = @config.root_dir
+      root_dir = @config.build_dir
+      root_dir ||= @config.root_dir
       if File.directory?(root_dir)
         path = File.join(root_dir, "manifest")
         process_folder.call(path)
@@ -95,7 +98,8 @@ module RokuBuilder
     end
 
     def write_file
-      root_dir = @config.parsed[:root_dir]
+      root_dir = @config.build_dir
+      root_dir ||= @config.root_dir
       raise ManifestError, "Cannot Update zipped manifest" if File.extname(root_dir) == ".zip"
       path = File.join(root_dir, "manifest")
       File.open(path, "wb") do |file|

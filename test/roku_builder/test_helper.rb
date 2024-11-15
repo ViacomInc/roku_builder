@@ -1,11 +1,9 @@
 # ********** Copyright Viacom, Inc. Apache 2.0 **********
 
 require "simplecov"
-require "coveralls"
 
 SimpleCov.formatter = SimpleCov::Formatter::MultiFormatter::new([
-  SimpleCov::Formatter::HTMLFormatter,
-  Coveralls::SimpleCov::Formatter
+  SimpleCov::Formatter::HTMLFormatter
 ])
 SimpleCov.start
 

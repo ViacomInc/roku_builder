@@ -78,6 +78,20 @@ module RokuBuilder
       assert_equal "/dev/null/infile", configs[:root_dir]
     end
 
+    def test_config_build_dir
+      options = build_options({
+        validate: true,
+        working: true,
+        build_dir: "build_dir"
+      })
+      options.define_singleton_method(:source_commands){[:validate]}
+      config = good_config(ConfigParserTest)
+      configs = ConfigParser.parse(options: options, config: config)
+
+      assert_equal Hash, config.class
+      assert_equal File.join(test_files_path(ConfigParserTest), "build_dir"), configs[:build_dir]
+    end
+
     def test_setup_project_config_bad_project
       config = good_config(ConfigParserTest)
       options = build_options({validate: true, project: :project3, stage: "production"})

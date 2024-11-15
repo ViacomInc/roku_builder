@@ -19,6 +19,12 @@ module RokuBuilder
     def test_manifest_read
       Manifest.new(config: @config)
     end
+    def test_manifest_read_build_dir
+      build_dir = File.join(test_files_path(ManifestTest), "build_dir")
+      @config.instance_variable_set(:@parsed, {root_dir: @root_dir, build_dir: build_dir})
+      manifest = Manifest.new(config: @config)
+      assert_equal "Build Dir Title", manifest.title
+    end
     def test_manifest_read_missing
       FileUtils.rm(File.join(@config.parsed[:root_dir], "manifest"))
       assert_raises ManifestError do
@@ -73,6 +79,17 @@ module RokuBuilder
       assert !!manifest.build_version
       assert !!manifest.mm_icon_focus_hd
       assert !!manifest.splash_screen_fhd
+    end
+    def test_manifest_generate_build_dir
+      attributes = {
+        title: "New Title"
+      }
+      build_dir = File.join(test_files_path(ManifestTest), "build_dir_gen")
+      @config.instance_variable_set(:@parsed, {root_dir: @root_dir, build_dir: build_dir})
+      manifest = Manifest.generate(config: @config,  attributes: attributes)
+      manifest = Manifest.new(config: @config)
+      assert_equal attributes[:title], manifest.title
+      FileUtils.rm(File.join(@root_dir, "build_dir_gen", "manifest"))
     end
     def test_manifest_increment_build_version
       manifest = Manifest.new(config: @config)

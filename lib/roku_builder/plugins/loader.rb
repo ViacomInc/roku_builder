@@ -217,7 +217,7 @@ module RokuBuilder
     def copy_channel_files(content)
       content[:source_files].each do |entity|
         begin
-          FileUtils.copy_entry(File.join(@config.parsed[:root_dir], entity), File.join(@target, entity))
+          FileUtils.copy_entry(File.join(build_dir, entity), File.join(@target, entity))
         rescue Errno::ENOENT
           @logger.warn "Missing Entry: #{entity}"
         end

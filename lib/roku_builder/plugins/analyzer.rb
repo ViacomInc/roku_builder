@@ -44,6 +44,7 @@ module RokuBuilder
         libraries = @config.project[:libraries]
         libraries ||= []
         Dir.glob(File.join(dir, "**", "*")).each do |file_path|
+          #byebug if file_path.include?("adTuningChannelComponent.brs")
           file = file_path.dup; file.slice!(dir)
           unless libraries.any_is_start?(file) and not @options[:include_libraries]
             if File.file?(file_path) and file_path.end_with?(".brs", ".xml")
@@ -73,6 +74,7 @@ module RokuBuilder
       end
       @logger.debug("Command: '#{command}'")
       results = `#{command} #{path} 2>#{stderr}`.split("\n")
+      @logger.debug("Results: '#{results}'")
       process_sca_results(results, linter_config)
     end
 
@@ -102,7 +104,7 @@ module RokuBuilder
         end
         libraries = @config.project[:libraries]
         libraries ||= []
-        if @sca_warning[:path] and libraries.any_is_start?(@sca_warning[:path].gsub(/pkg:/, "")) and not @options[:include_libraries]
+        if @sca_warning[:path] and libraries.any_is_start?(@sca_warning[:path].gsub(/pkg:/, "")) and not @options[:include_libraries] and not linter_config[:sca_libraries]
           return false
         end
         if linter_config[:ignore_warnings]

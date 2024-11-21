@@ -18,7 +18,7 @@ module RokuBuilder
         lines_to_ignore = []
         file.readlines.each_with_index do |line, line_number|
           full_line = line.dup
-          line.gsub!(/'.*/, "") if file_path.end_with?(".brs")
+          line.gsub!(/'[^"]*("[^"]*"[^"\n]*)*$/, "\n") if file_path.end_with?(".brs")
           if file_path.end_with?(".xml")
             if in_xml_comment
               if line.gsub!(/.*-->/, "")
@@ -41,6 +41,7 @@ module RokuBuilder
         no_comments = file_no_comments.join("")
         file = full_file.join("")
         @inspector_config.each do |line_inspector|
+          next if line_inspector[:skip_xml] and file_path.end_with?(".xml")
           unless line_inspector[:disabled]
             to_check = no_comments
             to_check = file if line_inspector[:include_comments]
@@ -67,6 +68,7 @@ module RokuBuilder
               if (not line_inspector[:pass_if_match] and match) or (line_inspector[:pass_if_match] and not match)
                 error_match = match
                 if match
+
                   line_number = to_check[0..match.begin(0)+start].split("\n", -1).count - 1
                   start = match.end(0) + start
                 else

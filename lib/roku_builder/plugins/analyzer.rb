@@ -18,11 +18,14 @@ module RokuBuilder
         options[:analyze] = true
       end
       parser.separator "Options:"
-      parser.on("--inclide-libraries", "Include libraries in analyze") do
+      parser.on("--include-libraries", "Include libraries in analyze") do
         options[:include_libraries] = true
       end
-      parser.on("--sca-precommand COMMAND", "Include libraries in analyze") do |command|
-        options[:sca_precommand] = command
+      parser.on("--include-libraries-sca", "Include libraries in roku Static Code Aanlysis") do
+        options[:include_libraries_sca] = true
+      end
+      parser.on("--skip-sca", "Skip Roku Static Code Analysis") do |command|
+        options[:skip_sca] = command
       end
     end
 
@@ -40,7 +43,7 @@ module RokuBuilder
       loader = Loader.new(config: @config)
       Dir.mktmpdir do |dir|
         loader.copy(options: options, path: dir)
-        run_sca_tool(path: dir, linter_config: linter_config)
+        run_sca_tool(path: dir, linter_config: linter_config) unless options[:skip_sca]
         libraries = @config.project[:libraries]
         libraries ||= []
         Dir.glob(File.join(dir, "**", "*")).each do |file_path|
@@ -104,7 +107,7 @@ module RokuBuilder
         end
         libraries = @config.project[:libraries]
         libraries ||= []
-        if @sca_warning[:path] and libraries.any_is_start?(@sca_warning[:path].gsub(/pkg:/, "")) and not @options[:include_libraries] and not linter_config[:sca_libraries]
+        if @sca_warning[:path] and libraries.any_is_start?(@sca_warning[:path].gsub(/pkg:/, "")) and not @options[:include_libraries_sca] and not linter_config[:sca_libraries]
           return false
         end
         if linter_config[:ignore_warnings]

@@ -14,7 +14,7 @@
 @rem limitations under the License.
 @rem
 
-@if "%DEBUG%" == "" @echo off
+@if "%DEBUG%"=="" @echo off
 @rem ##########################################################################
 @rem
 @rem  sca-cmd startup script for Windows
@@ -25,7 +25,8 @@
 if "%OS%"=="Windows_NT" setlocal
 
 set DIRNAME=%~dp0
-if "%DIRNAME%" == "" set DIRNAME=.
+if "%DIRNAME%"=="" set DIRNAME=.
+@rem This is normally unused
 set APP_BASE_NAME=%~n0
 set APP_HOME=%DIRNAME%..
 
@@ -40,13 +41,13 @@ if defined JAVA_HOME goto findJavaFromJavaHome
 
 set JAVA_EXE=java.exe
 %JAVA_EXE% -version >NUL 2>&1
-if "%ERRORLEVEL%" == "0" goto execute
+if %ERRORLEVEL% equ 0 goto execute
 
-echo.
-echo ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH.
-echo.
-echo Please set the JAVA_HOME variable in your environment to match the
-echo location of your Java installation.
+echo. 1>&2
+echo ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH. 1>&2
+echo. 1>&2
+echo Please set the JAVA_HOME variable in your environment to match the 1>&2
+echo location of your Java installation. 1>&2
 
 goto fail
 
@@ -56,18 +57,18 @@ set JAVA_EXE=%JAVA_HOME%/bin/java.exe
 
 if exist "%JAVA_EXE%" goto execute
 
-echo.
-echo ERROR: JAVA_HOME is set to an invalid directory: %JAVA_HOME%
-echo.
-echo Please set the JAVA_HOME variable in your environment to match the
-echo location of your Java installation.
+echo. 1>&2
+echo ERROR: JAVA_HOME is set to an invalid directory: %JAVA_HOME% 1>&2
+echo. 1>&2
+echo Please set the JAVA_HOME variable in your environment to match the 1>&2
+echo location of your Java installation. 1>&2
 
 goto fail
 
 :execute
 @rem Setup the command line
 
-set CLASSPATH=%APP_HOME%\lib\sca-cmd.jar;%APP_HOME%\lib\sca-library.jar;%APP_HOME%\lib\utils-4.0.0.jar;%APP_HOME%\lib\configuration-4.0.0.jar;%APP_HOME%\lib\compress-4.0.0.jar;%APP_HOME%\lib\io-4.0.0.jar;%APP_HOME%\lib\imaging-4.0.0.jar;%APP_HOME%\lib\manifest-4.0.0.jar;%APP_HOME%\lib\commons-cli-1.5.0.jar;%APP_HOME%\lib\jackson-databind-2.13.3.jar;%APP_HOME%\lib\jackson-core-2.13.3.jar;%APP_HOME%\lib\jackson-annotations-2.13.3.jar;%APP_HOME%\lib\jackson-dataformat-xml-2.13.3.jar;%APP_HOME%\lib\commons-lang3-3.12.0.jar;%APP_HOME%\lib\woodstox-core-6.2.7.jar;%APP_HOME%\lib\stax2-api-4.2.1.jar;%APP_HOME%\lib\commons-compress-1.21.jar;%APP_HOME%\lib\commons-io-2.11.0.jar
+set CLASSPATH=%APP_HOME%\lib\sca-cmd.jar;%APP_HOME%\lib\sca-library.jar;%APP_HOME%\lib\utils-6.1.0.jar;%APP_HOME%\lib\configuration-6.1.0.jar;%APP_HOME%\lib\compress-6.2.0.jar;%APP_HOME%\lib\imaging-6.1.0.jar;%APP_HOME%\lib\manifest-6.2.2.jar;%APP_HOME%\lib\io-6.1.0.jar;%APP_HOME%\lib\commons-cli-1.8.0.jar;%APP_HOME%\lib\java-jwt-4.4.0.jar;%APP_HOME%\lib\jackson-databind-2.17.1.jar;%APP_HOME%\lib\jackson-core-2.17.1.jar;%APP_HOME%\lib\jackson-annotations-2.17.1.jar;%APP_HOME%\lib\jackson-dataformat-xml-2.17.1.jar;%APP_HOME%\lib\commons-compress-1.26.2.jar;%APP_HOME%\lib\commons-codec-1.17.0.jar;%APP_HOME%\lib\commons-lang3-3.14.0.jar;%APP_HOME%\lib\jelf-0.9.0.jar;%APP_HOME%\lib\woodstox-core-6.6.2.jar;%APP_HOME%\lib\stax2-api-4.2.2.jar;%APP_HOME%\lib\commons-io-2.16.1.jar
 
 
 @rem Execute sca-cmd
@@ -75,13 +76,15 @@ set CLASSPATH=%APP_HOME%\lib\sca-cmd.jar;%APP_HOME%\lib\sca-library.jar;%APP_HOM
 
 :end
 @rem End local scope for the variables with windows NT shell
-if "%ERRORLEVEL%"=="0" goto mainEnd
+if %ERRORLEVEL% equ 0 goto mainEnd
 
 :fail
 rem Set variable SCA_CMD_EXIT_CONSOLE if you need the _script_ return code instead of
 rem the _cmd.exe /c_ return code!
-if  not "" == "%SCA_CMD_EXIT_CONSOLE%" exit 1
-exit /b 1
+set EXIT_CODE=%ERRORLEVEL%
+if %EXIT_CODE% equ 0 set EXIT_CODE=1
+if not ""=="%SCA_CMD_EXIT_CONSOLE%" exit %EXIT_CODE%
+exit /b %EXIT_CODE%
 
 :mainEnd
 if "%OS%"=="Windows_NT" endlocal

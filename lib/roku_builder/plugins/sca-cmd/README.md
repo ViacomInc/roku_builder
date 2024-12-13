@@ -33,7 +33,7 @@ Example:
 
 Available `SEVERITY_LEVEL` values are: `info`, `warning` and `error`:
 
-- `info` - print all of the logs
+- `info` - print all the logs
 - `warning` - print warnings and errors
 - `error` - print errors only
 

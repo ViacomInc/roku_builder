@@ -28,6 +28,13 @@ module RokuBuilder
       parser.on("--inspect-package", "Inspect package after packaging") do
         options[:inspect_package] = true
       end
+      parser.on("--password PASSWORD", "Password of the current key") do |password|
+        options[:package_password] = password
+      end
+      parser.on("--dev-id DEV_ID", "Dev ID of the current key") do |dev_id|
+        options[:package_dev_id] = dev_id
+      end
+
     end
 
     def self.dependencies
@@ -55,7 +62,11 @@ module RokuBuilder
     end
 
     def genkey(options:)
-      password, dev_id = generate_new_key()
+      password = options[:package_password]
+      dev_id = options[:package_dev_id]
+      unless password and dev_id
+        password, dev_id = generate_new_key()
+      end
       @logger.unknown("Password: "+password)
       @logger.info("DevID: "+dev_id)
 

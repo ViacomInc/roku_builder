@@ -35,7 +35,10 @@ module RokuBuilder
       end
       parser.on("--no-publish", 'Prevent the channel from being automatically published when submitted') do
         options[:no_publish] = true
-      end 
+      end
+      parser.on("--minimum-firmware-version VERSION", 'The minimum firmware version to use for the channel') do |version|
+        options[:minimum_firmware_version] = version
+      end
     end
 
     def self.dependencies
@@ -44,6 +47,9 @@ module RokuBuilder
 
     def submit(options:)
       raise RokuBuilder::InvalidOptions, "Missing channel id" unless options[:channel_id]
+      raise RokuBuilder::InvalidOptions, "Missing api key" unless options[:api_key]
+      raise RokuBuilder::InvalidOptions, "Missing package" unless options[:in]
+      raise RokuBuilder::InvalidOptions, "Missing minimum firmware version" unless options[:minimum_firmware_version]
       @logger.info "Submit to channel #{options[:channel_id]}"
       @api_key = options[:api_key]
       @no_publish = !!options[:no_publish]
@@ -51,7 +57,7 @@ module RokuBuilder
       if response.first["channelState"] == "Unpublished"
         response = update_channel_version(options[:channel_id], get_package(options), response.last["id"])
       else
-        response = create_channel_version(options[:channel_id], get_package(options))
+        response = create_channel_version(options[:channel_id], get_package(options), options[:minimum_firmware_version])
       end
       raise RokuBuilder::ExecutionError, "Request failed: #{response.reason_phrase}" unless response.success?
       JSON.parse(response.body)
@@ -59,6 +65,7 @@ module RokuBuilder
 
     def publish(options:)
       raise RokuBuilder::InvalidOptions, "Missing channel id" unless options[:channel_id]
+      raise RokuBuilder::InvalidOptions, "Missing api key" unless options[:api_key]
       @logger.info "Publish to channel #{options[:channel_id]}"
       @api_key = options[:api_key]
       response = get_channel_versions(options[:channel_id])
@@ -90,14 +97,15 @@ module RokuBuilder
       end
       sorted
     end
-    
-    def create_channel_version(channel, package)
+
+    def create_channel_version(channel, package, version)
       path = "/external/channels/#{channel}/versions"
+      body = {"minimumFirmwareVersionTextShort" => version}
       params = nil
       unless @no_publish
         params = {"state" => "Published"}
       end
-      api_post(path, path, package, params)
+      api_post(path, path, package, params, body)
     end
 
     def update_channel_version(channel, package, version)
@@ -117,13 +125,14 @@ module RokuBuilder
       connection('GET', path, nil).get(api_path+path)
     end
 
-    def api_post(path, token_path, package=nil, params = nil)
-      body = {}.to_json
+    def api_post(path, token_path, package=nil, params = nil, body = nil)
+      body ||= {}
       if package
-        body = {
+        body.merge!({
           "appFileBase64Encoded" => Base64.encode64(package.read)
-        }.to_json
+        })
       end
+      body = body.to_json
       connection('POST', token_path, body, params).post(api_path+path) do |request|
         if params
           request.params = params
@@ -141,6 +150,7 @@ module RokuBuilder
       response = connection('PATCH', token_path, body).patch(api_path+path) do |request|
         request.body = body
       end
+      response
     end
 
     def connection(method, path, body, params = nil)
@@ -152,6 +162,7 @@ module RokuBuilder
       }) do |f|
         f.adapter Faraday.default_adapter
       end
+      connection
     end
 
     def get_jwt_token(api_key, service_urn, method, path, body = nil, params = nil)

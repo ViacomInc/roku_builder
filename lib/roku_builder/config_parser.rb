@@ -125,6 +125,9 @@ module RokuBuilder
       unless @parsed[:out][:folder]
         @parsed[:out][:folder] = Dir.tmpdir
       end
+      if @config[:default_file]
+        @parsed[:out][:default_file] = @config[:default_file]
+      end
     end
 
     def setup_project_config

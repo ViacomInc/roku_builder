@@ -152,6 +152,7 @@ module RokuBuilder
 
     def file_path(type)
       file = @config.send(type)[:file]
+      file ||= @config.send(type)[:default_file]
       file ||= Manifest.new(config: @config).build_version
       file ||= SecureRandom.uuid
       file = file+".zip" unless file.end_with?(".zip")

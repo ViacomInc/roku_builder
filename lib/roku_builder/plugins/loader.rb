@@ -204,7 +204,7 @@ module RokuBuilder
               end
               # Deny filetypes that aren't compatible with Roku to avoid Certification issues.
               if !zipFilePath.end_with?(".pkg", ".md", ".zip")
-                io.get_output_stream(zipFilePath) { |f| f.puts(File.open(diskFilePath, "rb").read()) }
+                io.get_output_stream(zipFilePath) { |f| f.write(File.open(diskFilePath, "rb").read()) }
               else
                 @logger.warn "Ignored file with invalid Roku filetype " + File.basename(diskFilePath)
               end

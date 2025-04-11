@@ -34,6 +34,9 @@ module RokuBuilder
       parser.on("--dev-id DEV_ID", "Dev ID of the current key") do |dev_id|
         options[:package_dev_id] = dev_id
       end
+      parser.on("--skip-size-check", "Skip size check for package") do
+        options[:skip_size_check] = true
+      end
 
     end
 
@@ -177,7 +180,7 @@ module RokuBuilder
         out_file = File.join(@config.out[:folder], @config.out[:file])
         out_file = out_file+".pkg" unless out_file.end_with?(".pkg")
         File.open(out_file, 'w+b') {|fp| fp.write(response.body)}
-        if File.exist?(out_file)
+        if File.exist?(out_file) and not @options[:skip_size_check]
           pkg_size = File.size(out_file).to_f / 2**20
           raise ExecutionError, "PKG file size is too large (#{pkg_size.round(2)} MB): #{out_file}" if pkg_size > 4.0
           @logger.info("Outfile: #{out_file}")
